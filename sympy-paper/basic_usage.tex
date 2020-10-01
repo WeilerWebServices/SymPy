@@ -1,0 +1,27 @@
+% symbols, various ways to declare them
+
+Symbolic variables, called symbols, must be defined and assigned to
+Python variables before they can be used. This is typically done through the
+\texttt{symbols} function, which may create multiple symbols in a single
+function call. For instance,
+\begin{verbatim}
+>>> x, y, z = symbols('x y z')
+\end{verbatim}
+creates three symbols representing variables named $x$, $y$, and $z$. In this
+particular instance, these symbols are all assigned to Python variables of the
+same name. However, the user is free to assign them to different
+Python variables, while representing the same symbol, such as
+\texttt{a, b, c = symbols(\textquotesingle{}x y z\textquotesingle{})}.
+In order to minimize potential confusion, though, all examples in this paper will
+assume that
+the symbols \verb|x|, \verb|y|, and \verb|z| have been assigned to Python variables
+identical to their symbolic names.
+
+Expressions are created from symbols using Python's mathematical syntax.  For
+instance, the following Python code creates the expression $(x^2 - 2x + 3)/y$.
+Note that the expression remains unevaluated: it is represented symbolically.
+
+\begin{verbatim}
+>>> (x**2 - 2*x + 3)/y
+(x**2 - 2*x + 3)/y
+\end{verbatim}

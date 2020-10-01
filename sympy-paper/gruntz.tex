@@ -1,0 +1,122 @@
+SymPy calculates limits using the Gruntz algorithm, as described in%
+~\cite{Gruntz1996limits}. The basic idea is as follows: any limit can be
+converted to a limit $\lim\limits_{x\to\infty} f(x)$ by substitutions like
+$x\to{1\over x}$. Then the subexpression $\omega$ (that converges
+to zero as $x\to\infty$ faster than all other subexpressions) is identified in
+$f(x)$, and $f(x)$ is expanded into a series with respect to $\omega$. Any
+positive powers of $\omega$ converge to zero (while negative powers indicate
+an infinite limit) and any constant term independent of
+$\omega$ determines the limit. When a constant term still depends on
+$x$ the Gruntz algorithm is applied again until a final numerical value
+is obtained as the limit.
+
+To determine the most rapidly varying subexpression, the comparability classes
+must first be defined, by calculating $L$:
+\begin{equation}
+L\equiv \lim_{x\to\infty} {\log |f(x)| \over \log |g(x)|}
+\end{equation}
+The relations $<$, $>$, and $\sim$ are defined as follows: $f>g$ when
+$L=\pm\infty$ (it is said that $f$ is more rapidly varying than $g$, i.e., $f$
+goes to $\infty$ or $0$ faster than $g$), $f<g$ when $L=0$ ($f$ is less
+rapidly varying than $g$) and $f\sim g$ when $L\neq 0,\pm\infty$ (both $f$ and
+$g$ are bounded from above and below by suitable integral powers of the
+other). Note that if $f > g$, then $f > g^n$ for any $n$. Here
+are some examples of comparability classes:
+\[2 < x < e^x < e^{x^2} < e^{e^x}\]
+\[2\sim 3\sim -5\]
+\[x\sim x^2\sim x^3\sim {1\over x}\sim x^m\sim -x\]
+\[e^x\sim e^{-x}\sim e^{2x}\sim e^{x+e^{-x}}\]
+\[f(x)\sim{1\over f(x)}\]
+
+The Gruntz algorithm is now illustrated with the following example:
+\begin{equation}
+    \label{gruntz_example_fn}
+f(x) = e^{x+2e^{-x}} - e^x + {1\over x} \,.
+\end{equation}
+First, the set of most rapidly varying subexpressions is determined---the
+so-called \textit{mrv set}. For~\eqref{gruntz_example_fn}, the mrv set
+$\{e^x, e^{-x}, e^{x+2e^{-x}}\}$ is obtained. These are all subexpressions of%
+~\eqref{gruntz_example_fn} and they all belong to the same comparability
+class. This calculation can be done using SymPy as follows:
+
+% dict_keys output order varies
+% no-doctest
+\begin{verbatim}
+>>> from sympy.series.gruntz import mrv
+>>> mrv(exp(x+2*exp(-x))-exp(x) + 1/x, x)[0].keys()
+dict_keys([exp(x + 2*exp(-x)), exp(x), exp(-x)])
+\end{verbatim}
+
+Next, an arbitrary item $\omega$ is taken from mrv set that converges to zero for
+$x\to\infty$ and doesn't have subexpressions in the given mrv set.  If such a term is not
+present in the mrv set (i.e., all terms converge to infinity instead of zero),
+the relation $f(x)\sim {1\over f(x)}$ can be used.  In the
+considered case, only the item $\omega=e^{-x}$ can be accepted.
+
+The next step is to rewrite the mrv set in terms of $\omega=g(x)$.  Every element
+$f(x)$ of the mrv set is rewritten as $A \omega^c$, where
+\begin{equation}
+\label{gruntz_rewrite}
+c = \lim\limits_{x\to\infty} \frac{\log{f(x)}}{\log{g(x)}},
+\qquad
+A = e^{\log f - c \log g}
+\end{equation}
+Note that this step includes calculation of more simple limits, for instance
+\begin{equation}
+	\lim\limits_{x\to\infty} \frac{\log{e^{x + 2 e^{-x}}}}{\log e^{-x}}=
+	\lim\limits_{x\to\infty} \frac{x + 2 e^{-x}}{-x} = -1
+\end{equation}
+In this example we obtain the rewritten mrv set: $\{{1\over\omega},
+\omega, {1\over\omega}e^{2\omega}\}$. This can be done in SymPy with
+\begin{verbatim}
+>>> from sympy.series.gruntz import mrv, rewrite
+>>> m = mrv(exp(x+2*exp(-x))-exp(x) + 1/x, x)
+>>> w = Symbol('w')
+>>> rewrite(m[1], m[0], x, w)[0]
+1/x + exp(2*w)/w - 1/w
+\end{verbatim}
+Then the rewritten subexpressions are
+substituted back into $f(x)$ in~\eqref{gruntz_example_fn}
+and the result is expanded with respect to~$\omega$:
+\begin{equation}
+    \label{gruntz_example_fn2}
+f(x) = {1\over x}-{1\over\omega}+{1\over\omega}e^{2\omega}
+     = 2+{1\over x} + 2\omega + O(\omega^2)
+\end{equation}
+
+Since $\omega$ is from the mrv set, then in the limit as $x\to\infty$,
+$\omega\to0$, and so $2\omega + O(\omega^2) \to 0$ in~\eqref{gruntz_example_fn2}:
+\begin{equation}
+f(x) = {1\over x}-{1\over\omega}+{1\over\omega}e^{2\omega}
+    = 2+{1\over x} + 2\omega + O(\omega^2)
+    \to 2 + {1\over x}
+\end{equation}
+
+In this example the result ($2+{1\over x}$) still depends on $x$, so the above procedure is
+repeated until just a value independent of $x$ is obtained. This is the final
+limit. In the above case the limit is $2$, as can be
+verified by SymPy:\footnote{\label{suppnote:gruntz}To see the intermediate steps discussed above, interested
+readers can switch on debugging output by setting
+the environment variable \texttt{SYMPY\_DEBUG=True}, before importing anything from
+the SymPy namespace.}
+
+\begin{verbatim}
+>>> limit(exp(x+2*exp(-x))-exp(x) + 1/x, x, oo)
+2
+\end{verbatim}
+
+In general, when $f(x)$ is expanded in terms of $\omega$, the following is obtained:
+\begin{equation}
+f(x) = \underbrace{O\left({1\over \omega^3}\right)}_\infty
+    + \underbrace{C_{-2}(x)\over \omega^2}_\infty
+    + \underbrace{C_{-1}(x)\over \omega}_\infty
+    + {C_{0}(x)}
+    + \underbrace{C_{1}(x)\omega}_0
+    + \underbrace{O(\omega^2)}_0
+\end{equation}
+The positive powers of $\omega$ are zero. If there are any negative powers of
+$\omega$, then the result of the limit is infinity, otherwise the limit is
+equal to $\lim\limits_{x\to\infty} C_0(x)$. The expression $C_0(x)$ is always
+simpler than original $f(x)$, and the same is true for limits arising in the
+rewrite stage~\eqref{gruntz_rewrite}, so the algorithm converges. A proof of this and further
+details on the algorithm are given in Gruntz's PhD thesis~\cite{Gruntz1996limits}.

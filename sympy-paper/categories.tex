@@ -1,0 +1,74 @@
+SymPy includes a submodule for dealing with categories---abstract mathematical
+objects representing classes of structures as classes of objects (points) and
+morphisms (arrows) between the objects. It was
+designed with the following two goals in mind:
+
+\begin{enumerate}
+\item automatic typesetting of diagrams given by a collection of
+  objects and of morphisms between them, and
+\item specification and semi-automatic derivation of properties
+  using commutative diagrams.
+\end{enumerate}
+
+As of version 1.0, SymPy only implements the first goal, while a partially
+working draft of implementation of the second goal is available at
+\url{https://github.com/scolobb/sympy/tree/ct4-commutativity}.
+
+In order to achieve the two goals, the submodule \texttt{sympy.categories} defines
+several classes representing some of the essential concepts: objects, morphisms,
+categories, and diagrams.  In category theory, the inner structure of objects is
+often discarded in the favor of studying the properties of morphisms, so the
+class \texttt{Object} is essentially a synonym of the class \texttt{Symbol}.
+There are several morphism classes which do not have a particular internal
+structure either, though an exception is \texttt{CompositeMorphism}, which
+essentially stores a list of morphisms.
+
+The class \texttt{Diagram} captures the properties of morphisms. This class
+stores a family of morphisms, the corresponding source and target objects,
+and, possibly, some properties of the morphisms. Generally, no restrictions
+are imposed on what the properties may be---for example, one might use strings
+of the form ``forall'', ``exists'', ``unique'', etc. Furthermore, the
+morphisms of a diagram are grouped into \textit{premises} and
+\textit{conclusions} in order to be able to represent logical implications of
+the form ``for a collection of morphisms $P$ with properties $p:P\to \Omega$
+(the premises), there exists a collection of morphisms $C$ with properties
+$c:C\to \Omega$ (the conclusions)'', where $\Omega$ is the universal
+collection of properties. Finally, the class \texttt{Category} includes a
+collection of diagrams which are deemed commutative and which therefore define
+the properties of this category.
+
+Automatic typesetting of diagrams takes a \texttt{Diagram} and produces \LaTeX{}
+code using the \texttt{Xy-pic} package~\cite{rose1999xy}.  Typesetting is done in two stages:
+layout and generation of \texttt{Xy-pic} code.  The layout stage is taken care
+of by the class \texttt{DiagramGrid}, which takes a \texttt{Diagram} and lays out
+the objects in a grid, trying to reduce the average length of the arrows in the
+final picture.  By default, \texttt{DiagramGrid} uses a series of triangle-based
+heuristics to produce a rectangular grid.  A linear layout can also be imposed.
+Furthermore, groups of objects can be given; in this case, the groups will be
+treated as atomic cells, and the member objects will be typeset independently of
+the other objects.
+
+The second phase of diagram typesetting consists in actually drawing the picture
+and is carried out by the class \texttt{XypicDiagramDrawer}.  An example of a
+diagram automatically typeset by \texttt{DiagramgGrid} and
+\texttt{XypicDiagramDrawer} is given in Figure~\ref{fig:cat:loops}.
+\begin{figure}[h]
+  \centerline{
+    \xymatrix{
+      A \ar[r]_{f} \ar@/^3mm/[rr]^{h_{2}} \ar@(u,l)[]^{l_{A}} \ar@/^3mm/@(l,d)[]^{n_{A}} & B \ar[d]^{g} & D \ar[l]^{k} \ar@/_7mm/[ll]_{h} \ar@/_11mm/[ll]_{h_{1}} \ar@(r,u)[]^{l_{D}} \ar@/^3mm/@(d,r)[]^{n_{D}} \\
+      & C \ar@(l,d)[]^{l_{C}} \ar@/^3mm/@(d,r)[]^{n_{C}} &
+    }
+  }
+  \caption{A diagram typeset in Xy-pic automatically by \texttt{XypicDiagramDrawer}.}\label{fig:cat:loops}
+\end{figure}
+
+As far as the second main goal of \texttt{sympy.categories} is concerned, the principal idea
+consists in automatically deciding whether a diagram is commutative or not,
+given a collection of ``axioms'': diagrams known to be commutative. The
+implementation is based on graph embeddings (injective maps): whenever an
+embedding of a commutative diagram into a given diagram is found, one
+concludes that the subdiagram is commutative. Deciding commutativity of the
+whole diagram is therefore based (theoretically) on finding a ``cover'' of the
+target diagram by embeddings of the axioms. The na\"{\i}ve implementation
+proved to be prohibitively slow; a better optimized version is therefore in
+order, as well as application of heuristics.

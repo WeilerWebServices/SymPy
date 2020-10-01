@@ -1,0 +1,145 @@
+%% Submissions for peer-review must enable line-numbering
+%% using the lineno option in the \documentclass command.
+%%
+%% Preprints and camera-ready submissions do not need
+%% line numbers, and should have this option removed.
+%%
+%% Please note that the line numbering option requires
+%% version 1.1 or newer of the wlpeerj.cls file.
+
+\documentclass[fleqn,10pt,numbers]{wlpeerj} % for journal submissions
+% \documentclass[fleqn,10pt]{wlpeerj} % for preprint submissions
+
+\renewcommand\thesection{S\arabic{section}}
+\renewcommand\thesubsection{\thesection.\arabic{subsection}}
+
+%\usepackage[numbers]{natbib}
+
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[scaled=0.8]{DejaVuSansMono}
+
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage[all]{xy}
+\usepackage{amsmath}
+\usepackage{caption}
+\graphicspath{ {images/} }
+
+% Makes quote characters in monospace font not be curly
+\usepackage{upquote}
+
+\usepackage{amsmath}
+\usepackage{url}
+
+\hypersetup{
+  colorlinks=true,
+  urlcolor=blue,
+  citecolor=black
+}
+
+% for nice units
+\usepackage{siunitx}
+
+% for images: png, pdf, etc
+\usepackage{graphicx}
+
+% for nice table formatting, i.e., /toprule, /midrule, etc
+\usepackage{booktabs}
+
+% to allow for \verb++ declarations in captions.
+\usepackage{cprotect}
+
+% to allow usage of \mathbb symbols
+\usepackage{amssymb}
+
+\usepackage{longtable}
+
+\usepackage{listings}
+
+
+\begin{document}
+
+\flushbottom
+\thispagestyle{empty}%
+\vskip-36pt%
+{\raggedright\sffamily\bfseries\fontsize{20}{25}\selectfont SymPy: symbolic computing in Python\par}%
+\vskip10pt
+{\raggedright\sffamily\fontsize{12}{16}\selectfont  Supplementary material\par}
+\vskip25pt%
+
+The supplementary material takes a deeper look at certain topics in SymPy
+which there was not enough room to discuss in the paper.
+Section~\ref{suppsec:Gruntz} discusses the Gruntz algorithm, used to
+calculate limits in SymPy.  Sections~\ref{suppsec:Series}--\ref{suppsec:Ten}
+discuss in depth some selected submodules.  Section~\ref{suppsec:numsimpl}
+discusses numerical simplification.  Section~\ref{suppsec:examples} provides
+additional examples for topics discussed in the main paper.  In section~\ref{suppsec:sympy-gamma} the SymPy Gamma
+project is discussed.  Finally, section~\ref{suppsec:comp-mma}
+has a
+brief comparison of SymPy with Wolfram Mathematica.
+
+As in the paper, all examples in the supplement assume that the following
+has been run:
+\begin{verbatim}
+>>> from sympy import *
+>>> x, y, z = symbols('x y z')
+\end{verbatim}
+
+
+\section{Limits: The Gruntz Algorithm}
+\label{suppsec:Gruntz}
+\input{gruntz.tex}
+
+% Series module (Formal Power Series, Fourier Series)
+\section{Series}
+\label{suppsec:Series}
+\input{series.tex}
+
+% Logic module
+\section{Logic}
+\label{suppsec:Logic}
+\input{logic}
+
+\section{Diophantine Equations}
+\label{suppsec:Dioph}
+\input{diophantine}
+
+% Sets
+\section{Sets}
+\label{suppsec:Sets}
+\input{sets}
+
+\section{Statistics}
+\label{suppsec:Stats}
+\input{stats}
+
+\section{Category Theory}
+\label{suppsec:Cat}
+\input{categories}
+
+\section{Tensors}
+\label{suppsec:Ten}
+\input{tensors}
+
+\section{Numerical Simplification}
+\label{suppsec:numsimpl}
+\input{nsimplify}
+
+\section{Examples}
+\label{suppsec:examples}
+\input{examples}
+
+\section{SymPy Gamma}
+\label{suppsec:sympy-gamma}
+\input{gamma}
+
+\section{Comparison with Mathematica}
+\label{suppsec:comp-mma}
+\input{comparison_with_mma}
+
+\phantomsection
+\bibliography{paper}
+
+\end{document}

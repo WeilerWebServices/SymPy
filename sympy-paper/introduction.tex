@@ -1,0 +1,91 @@
+SymPy is a full featured computer algebra system (CAS) written in the
+Python~\cite{lutz2013learning}
+programming language.
+It is free and open source software, licensed under the 3-clause BSD
+license~\cite{rosen2005open}.
+The SymPy project was started by Ond\v{r}ej \v{C}ert\'{\i}k in 2005, and it has
+since grown to over 500 contributors. Currently, SymPy is
+developed on GitHub using a bazaar community
+model~\cite{raymond1999cathedral}. The accessibility of the codebase and the
+open community model allow SymPy to rapidly respond to the needs of
+users and developers.
+
+Python is a dynamically typed programming language that has a focus on
+ease of use and readability.\footnote{\label{note:python}This paper assumes a moderate
+  familiarity with the Python programming language.} Due in part to this focus, it has become a popular
+language for scientific
+computing and data science, with a broad ecosystem of
+libraries~\cite{oliphant2007python}. SymPy is itself used as a dependency
+by many libraries
+and tools to support research within a variety of domains, such as
+SageMath~\cite{sagemath} (pure and applied mathematics),
+yt~\cite{2011ApJS..192....9T} (astronomy and astrophysics),
+PyDy~\cite{gede2013constrained} (multibody dynamics), and
+SfePy~\cite{cimrman2014sfepy} (finite elements).
+
+Unlike many CAS's, SymPy does not invent its own programming language. Python
+itself is used both for the internal implementation and end user
+interaction. By using the operator overloading functionality of Python, SymPy follows the embedded domain specific language paradigm proposed by Hudak~\cite{dsl-little-languages}.  The exclusive usage of a single programming language makes it easier
+for people already familiar with that language to use or develop SymPy.
+Simultaneously, it enables developers to focus on mathematics, rather than
+language design.  SymPy version 1.0 officially supports Python 2.6, 2.7 and 3.2--3.5.
+
+SymPy is designed with a strong focus on usability as a library.
+Extensibility is important in its application program interface
+(API) design. Thus, SymPy makes no attempt to extend
+the Python language itself. The goal is for users of SymPy to be able to
+include SymPy alongside other Python libraries in their workflow, whether that
+be in an interactive environment or as a programmatic part in a larger system.
+
+Being a library, SymPy does not have a built-in graphical user interface (GUI).
+However, SymPy exposes a rich interactive display system, and supports
+registering display formatters with Jupyter~\cite{kluyver2016jupyter} frontends,
+including the Notebook and Qt Console, which will render SymPy expressions
+using MathJax~\cite{cervone2012mathjax} or \LaTeX{}.
+
+The remainder of this paper discusses key components of the SymPy library.
+Section~\ref{sec:features} enumerates the features of SymPy and takes a closer
+look at some of the important ones. The section~\ref{sec:numerics} looks at
+the numerical features of SymPy and its dependency library, mpmath.
+Section~\ref{sec:domain_specific} looks at the domain specific physics
+submodules for performing symbolic and numerical calculations in classical
+mechanics and quantum mechanics. Section~\ref{sec:architecture} discusses the
+architecture of SymPy. Section~\ref{sec:other-proj} looks at a selection of
+packages that depend on SymPy. Conclusions and future directions for SymPy are given
+in section~\ref{sec:conclusion}. All examples in this paper use SymPy version
+1.0 and mpmath version 0.19.
+
+Additionally, the supplementary material takes a deeper look at a few SymPy
+topics. Supplement section~\ref{S-suppsec:Gruntz} discusses the Gruntz
+algorithm, which SymPy uses to calculate symbolic limits.
+Sections~\ref{S-suppsec:Series}--\ref{S-suppsec:numsimpl} of the supplement
+discuss the series, logic, Diophantine equations, sets, statistics, category
+theory, tensor, and numerical simplification submodules of SymPy,
+respectively. Supplement section~\ref{S-suppsec:examples} provides additional
+examples for topics discussed in the main paper. Supplement
+section~\ref{S-suppsec:sympy-gamma} discusses the SymPy Gamma project.
+Finally, section~\ref{S-suppsec:comp-mma} of the supplement contains a brief
+comparison of SymPy with Wolfram Mathematica.
+
+The following statement imports all SymPy functions into the global Python
+namespace.\footnote{\texttt{import *} has been used here to aid the
+  readability of the paper, but is best to avoid such wildcard import
+  statements in production code, as they make it unclear which names are
+  present in the namespace. Furthermore, imported names could clash with
+  already existing imports from another package. For example, SymPy, the
+  standard Python \texttt{math} library, and NumPy all define the \texttt{exp}
+  function, but only the SymPy one will work with SymPy symbolic expressions.}
+From here on, all examples in this paper assume that this statement has been
+executed:\footnote{\label{note:prompt} The three greater-than signs denote the user input for the
+  Python interactive session, with the result, if there is one, shown on the
+  next line.}
+
+\begin{verbatim}
+>>> from sympy import *
+\end{verbatim}
+
+All the examples in this paper can be tested on
+\href{http://live.sympy.org}{SymPy Live}, an online Python shell that uses the
+Google App Engine~\cite{ciurana2009developing} to execute SymPy code. SymPy Live
+is also integrated into the SymPy documentation at
+\href{http://docs.sympy.org}{http://docs.sympy.org}.

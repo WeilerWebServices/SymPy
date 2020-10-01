@@ -1,0 +1,37 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>{% block title %}{% endblock %}</title>
+    <link href="/static/css/styles.css" rel="stylesheet" type="text/css" />
+    <script src="/static/external/jquery-1.6.4.min.js" type="text/javascript"></script>
+    <script src="/static/external/datatables/jquery.dataTables.min.js" type="text/javascript"></script>
+    <link href="/static/external/datatables/css/demo_table.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript">{% block runtime %}{% endblock %}</script>
+</head>
+
+<body>
+<div id="wrap">
+    <div id="sidebar">
+        <h1>SymPy</h1>
+        <p class="slogan">test report</p>
+        <ul>
+            <li><a href="/">Main Page</a></li>
+        </ul>
+        <h2>Links:</h2>
+        <ul>
+            <li><a href="http://sympy.org">SymPy</a></li>
+            <li><a href="https://github.com/sympy/sympy-bot">SymPy Bot</a></li>
+            <li><a href="https://github.com/sympy/sympy/pulls">SymPy Pull Requests</a></li>
+        </ul>
+        <p class="credits">&copy; 2013 SymPy Development Team</p>
+    </div>
+
+    <div id="content">
+        {% block content %}
+        {% endblock %}
+    </div>
+</div>
+</body>
+</html>

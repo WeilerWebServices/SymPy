@@ -1,0 +1,24 @@
+\documentclass{article}
+\usepackage{xltxtra}
+\usepackage{xunicode}
+\usepackage{verbatim}
+\usepackage{fontspec}
+\usepackage[margin=0in, paperwidth=5.125in, paperheight=0.7in]{geometry}
+% The width comes from the SIAM style file
+% The height is the smallest height that doesn't crop the text
+
+\setmonofont[Scale=0.714]{DejaVu Sans Mono}
+\tracingonline=1 % Show missing characters in the command line
+
+\setlength\lineskiplimit{-1000pt}
+\linespread{0.70}
+
+\begin{document}
+\begin{verbatim}
+>>> pprint(Integral(sqrt(phi0 + 1), phi0))
+⌠
+⎮   ________
+⎮ ╲╱ φ₀ + 1  d(φ₀)
+⌡
+\end{verbatim}
+\end{document}

@@ -1,0 +1,53 @@
+\documentclass{letter}
+
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{geometry}
+
+\usepackage{hyperref}
+% \signature{Aaron Meurer}
+\address{Aaron Meurer \\
+ERGS: \url{http://www.ergs.sc.edu/} \\
+Nuclear Eng., Mechanical Eng. Dept. \\
+University of South Carolina \\
+541 Main Street, St. 009 \\
+Columbia, SC 29201 \\
+\url{asmeurer@gmail.com}}
+
+\date{September 31, 2016} % stand-in
+
+\geometry{headheight = 0.6in}
+\fancypagestyle{empty}{\fancyhf{}\fancyhead[L]{\includegraphics[height=1in, keepaspectratio=true]{logo-curves.pdf}}}
+
+\begin{document}
+
+\begin{letter}{}
+\opening{Dear Editors,}
+
+We thank you and the referees for your thoughtful comments and suggestions on
+our manuscript, ``SymPy: Symbolic Computing in Python''. We have endeavored to
+address your comments and concerns point by point below. We give your
+and the reviewers' comments on white background and our replies on gray
+background.
+
+Reviewer 1 had concerns that the paper was out of scope, but the editor has
+confirmed that it is in scope. Many of the points that reviewer 3 raised were
+in regards to the relevance of various sections. The intended scope of this
+paper was to be an architecture paper for SymPy's 1.0 release. We have
+examined reviewer 3's points through this lens. To address this, we have
+restructured the manuscript to make the paper more readable to those not
+already experts in SymPy or symbolic mathematics.
+
+We thank you again for your consideration. Given these edits, the manuscript
+has been greatly improved and we believe that it is now suitable for
+publication in PeerJ Computer Science. If there are further questions or
+concerns please do not hesitate to contact us.
+
+% Main text
+\closing{Best regards,\\
+\fromsig{\includegraphics[scale=0.07]{aaron-signature.png}} \\
+\fromname{Aaron Meurer}
+}
+
+\end{letter}
+\end{document}

@@ -1,0 +1,76 @@
+SymPy provides all the basic operations of calculus, such as calculating
+limits, derivatives, integrals, or summations.
+
+Limits are computed with the \verb|limit| function, using the Gruntz
+algorithm~\cite{Gruntz1996limits} for computing symbolic limits and heuristics
+(a description of the Gruntz algorithm may be found in
+section~\ref{S-suppsec:Gruntz} of the supplementary material).
+For example, the following computes
+$\lim\limits_{x\to \infty} x\sin(\frac{1}{x})=1$. Note that SymPy denotes
+$\infty$ as \verb|oo| (two lower case ``\verb|o|''s).
+\begin{verbatim}
+>>> limit(x*sin(1/x), x, oo)
+1
+\end{verbatim}
+As a more complex example, SymPy computes \[\lim\limits_{x\to 0}{\left(2 e^{\frac{1 - \cos{\left (x \right )}}{\sin{\left (x \right )}}} -
+  1\right)}^{\frac{\sinh{\left (x \right )}}{\operatorname{atan}^{2}{\left (x
+      \right )}}} = e.\]
+\begin{verbatim}
+>>> limit((2*exp((1-cos(x))/sin(x))-1)**(sinh(x)/atan(x)**2), x, 0)
+E
+\end{verbatim}
+
+Derivatives are computed with the \verb|diff| function, which recursively uses
+the various differentiation rules.
+\begin{verbatim}
+>>> diff(sin(x)*exp(x), x)
+exp(x)*sin(x) + exp(x)*cos(x)
+\end{verbatim}
+
+Integrals are calculated with the \verb|integrate| function. SymPy
+implements a combination of the Risch
+algorithm~\cite{bronstein2005integration}, table lookups, a reimplementation
+of Manuel Bronstein's ``Poor Man's Integrator''~\cite{Bronstein2005pmint}, and
+an algorithm for computing integrals based on Meijer G-functions~\cite{Roach1996hyper,roach1997meijerg}. These allow
+SymPy to compute a wide variety of indefinite and definite integrals. The
+Meijer G-function algorithm and the Risch algorithm are respectively
+demonstrated below by the computation of \[\int_{0}^{\infty} e^{-s t}\log{\left (t \right )}\, dt = - \frac{ \log{\left (s \right )} + \gamma}{s}\] and \[\int \frac{- 2 x^{2} \left(\log{\left (x \right )} + 1\right) e^{x^{2}} + {\left(e^{x^{2}} + 1\right)}^{2}}{x {\left(e^{x^{2}} + 1\right)}^{2} \left(\log{\left (x \right )} + 1\right)}\, dx = \log{\left (\log{\left (x \right )} + 1 \right )} + \frac{1}{e^{x^{2}} + 1}.\]
+\begin{verbatim}
+>>> s, t = symbols('s t', positive=True)
+>>> integrate(exp(-s*t)*log(t), (t, 0, oo)).simplify()
+-(log(s) + EulerGamma)/s
+>>> integrate((-2*x**2*(log(x) + 1)*exp(x**2) +
+... (exp(x**2) + 1)**2)/(x*(exp(x**2) + 1)**2*(log(x) + 1)), x)
+log(log(x) + 1) + 1/(exp(x**2) + 1)
+\end{verbatim}
+
+Summations are computed with the \verb|summation| function, which uses a
+combination of Gosper's algorithm~\cite{gosper1978decision}, an algorithm that
+uses Meijer G-functions~\cite{Roach1996hyper,roach1997meijerg}, and
+heuristics. Products are computed with \verb|product| function via a suite of
+heuristics.
+% TODO: Are there other summation algorithms implemented?
+% TODO: A good summation example or two
+\begin{verbatim}
+>>> i, n = symbols('i n')
+>>> summation(2**i, (i, 0, n - 1))
+2**n - 1
+>>> summation(i*factorial(i), (i, 1, n))
+n*factorial(n) + factorial(n) - 1
+\end{verbatim}
+
+Series expansions are computed with the \verb|series| function. This example computes the power series of $\sin(x)$ around $x=0$ up to $x^6$.
+\begin{verbatim}
+>>> series(sin(x), x, 0, 6)
+x - x**3/6 + x**5/120 + O(x**6)
+\end{verbatim}
+Section~\ref{S-suppsec:Series} of the supplementary material discusses series
+expansions methods in more depth. Integrals, derivatives, summations,
+products, and limits that cannot be computed return unevaluated objects. These
+can also be created directly if the user chooses.
+\begin{verbatim}
+>>> integrate(x**x, x)
+Integral(x**x, x)
+>>> Sum(2**i, (i, 0, n - 1))
+Sum(2**i, (i, 0, n - 1))
+\end{verbatim}

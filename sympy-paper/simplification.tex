@@ -1,0 +1,49 @@
+% polynomial expressions
+
+% functions
+
+% expand( ), factor( ), collect( ), together( ), apart( )
+%% maybe a table best suits this part.
+
+% simplification: simplify, sqrt denest, fu, trigsimp
+
+The generic way to simplify an expression is by calling the \texttt{simplify}
+function.
+It must be emphasized that simplification is not a rigorously defined
+mathematical operation~\cite{Moses1971simplification}.
+The \texttt{simplify} function applies several simplification routines along
+with heuristics to make the output expression ``simple''.\footnote{The
+\texttt{measure} parameter of the \texttt{simplify}
+function lets the user specify the Python function used to determine how complex an
+expression is.  The default measure function returns the total number of
+operations in the expression.}
+
+It is often preferable to apply more directed simplification functions. These
+apply very specific rules to the input expression and are typically able to make
+guarantees about the output. For instance, the \texttt{factor} function,
+given a polynomial with rational coefficients in several variables,
+is guaranteed to
+produce a factorization into irreducible factors. Table~\ref{simplify-table}
+lists common simplification functions.
+
+Examples for these simplification functions can be found in
+section~\ref{S-suppsec:examples} of the supplementary material.
+
+\begin{center}
+\begin{table}[htb]
+\caption{Some SymPy Simplification Functions}\label{simplify-table}
+\begin{tabular}{ll}
+\toprule
+\verb|expand| & expand the expression \\
+\verb|factor| & factor a polynomial into irreducibles \\
+\verb|collect| & collect polynomial coefficients \\
+\verb|cancel| & rewrite a rational function as $p/q$ with common factors
+canceled \\
+\verb|apart| & compute the partial fraction decomposition of a rational function
+\\
+\verb|trigsimp| & simplify trigonometric expressions~\cite{fu2006automated} \\
+\verb|hyperexpand| & expand hypergeometric functions~\cite{Roach1996hyper,roach1997meijerg} \\
+\bottomrule
+\end{tabular}
+\end{table}
+\end{center}

@@ -1,0 +1,154 @@
+\documentclass[answers,12pt]{exam}
+\usepackage{xcolor}
+
+\usepackage{xr-hyper}
+\usepackage{hyperref}
+\externaldocument[P-]{paper}
+\externaldocument[S-]{supplement}
+
+\usepackage{upquote}
+\usepackage{textcomp}
+\usepackage[T1]{fontenc}
+
+\usepackage{pdfpages}
+
+\hypersetup{
+  colorlinks=true,
+  filecolor=black, % color of cross-file links. Black because they only work
+                   % if the paper sits alongside the rebuttal as "paper.pdf".
+  urlcolor=blue % color of external links
+}
+
+\unframedsolutions
+\shadedsolutions
+\renewcommand{\solutiontitle}{}
+
+\begin{document}
+
+\includepdf{coverletter2.pdf}
+
+\section{Comments from Editor}
+
+\begin{questions}
+\question  In section 2.3, lines 128--129, it is written
+\begin{quote}
+For instance, the identity $\sqrt{t^2} = t$ holds if $t$ is nonnegative ($t \geq
+0$). However, for general complex $t$, no such identity holds.
+\end{quote}
+The first sentence doesn't make sense unless $\sqrt{\cdot}$ is defined;
+obviously it is intended to yield the nonnegative square root. The second
+sentence is incorrect, so needs rewording or deleting. For complex $t$ it is
+true that $\sqrt{t^2} = t$ holds if $t$ lies in the right half-plane, assuming
+$\sqrt{\cdot}$ is defined to be the square root lying in the right half-plane.
+\begin{solution}
+We reworked the two sentences to clarify the situation. We have added a
+footnote with the definition of $\sqrt z$ that SymPy uses.
+\end{solution}
+
+\question Page 7, line 186: please state in the text whether this is typed as two lower case letter o's, as opposed to being some special symbol.
+\begin{solution}
+We have added a note here.
+\end{solution}
+
+\question Page 10, line 315: replace ``solving'' by ``finding its zeros''.
+\begin{solution}
+We have fixed this.
+\end{solution}
+
+\question Page 18, line 684: replace ``is as performant as'' by ``performs as well as''. The former is not correct English.
+\begin{solution}
+We have fixed this.
+\end{solution}
+
+\question Reference [42]: the title and publisher appear to have run together.
+\begin{solution}
+We have fixed this.
+\end{solution}
+
+\question Supplement, line 1: delete ``for''.
+\begin{solution}
+We have fixed this.
+\end{solution}
+
+\question Supplement, line 18: ``dependends'' $\rightarrow$ ``depends''.
+\begin{solution}
+We have fixed this.
+\end{solution}
+
+\end{questions}
+
+\section{Comments from Reviewer 1}
+\emph{There are no additional comments from reviewer 1.}
+
+
+\section{Comments from Reviewer 2}
+\subsection{Basic reporting}
+No comments.
+
+\subsection{Experimental design}
+No comments.
+
+\subsection{Validity of the findings}
+No comments.
+
+\subsection{Comments for the author}
+This is a great paper. Thank you for addressing my concerns.
+
+\section{Comments from Reviewer 3}
+\subsection{Basic reporting}
+The structure of the paper and the supplement is now improved, compared to the original submission, and the materials are now much easier to read and comprehend.
+
+\subsection{Experimental design}
+No Comments
+
+\subsection{Validity of the findings}
+No Comments
+
+\subsection{Comments for the author}
+\subsubsection{The paper}
+
+\begin{questions}
+\question The abstract and the paper itself mention the paper's supplement in several places. I believe it would be beneficial to add a short paragraph, possibly after line 90, that would list the supplement's contents in a manner similar to that of the paper's contents (lines 83--90), with the list submodules, to make it easier for an interested reader to find their way around it.
+\begin{solution}
+We have added a paragraph about the supplement at the suggested location. We
+have also referenced specific supplement section numbers throughout the
+paper.
+\end{solution}
+
+\question In line 323, it should say ``\ldots meaning that the entries\ldots''.
+\begin{solution}
+We have fixed this.
+\end{solution}
+
+\question In line 673, it should say either ``poorer than that of its commercial competitors'' or ``poorer than its commercial competitors''' (ending in apostrophe).
+\begin{solution}
+We have used the first suggestion.
+\end{solution}
+
+\question In line 813, one ``PhD thesis'' seems to be superficial.
+\begin{solution}
+We have fixed this.
+\end{solution}
+
+\subsubsection{The supplement}
+
+\question Figure 1 is hard to read. I suggest putting the labels on the outside of the loops.
+\begin{solution}
+The figure code is generated automatically from the category theory submodule. We
+have made this clearer by changing the figure caption to ``A diagram typeset
+in Xy-pic automatically by \texttt{XypicDiagramDrawer}''. We have opened
+\href{https://github.com/sympy/sympy/issues/11744}{issue 11744} in our public
+issue tracker for improving the label placement.
+\end{solution}
+
+\question Figure 2 has the wrong link towards SymPy Gamma's computation of $\tan(x)$
+ instead of $\int \tan(x)\,dx$.
+\begin{solution}
+The original link does include the integral steps, since SymPy Gamma
+automatically includes the integral as one of the computations when given an
+expression. However, we have changed the link as suggested to a query for
+``integrate tan(x)'', as this is clearer.
+\end{solution}
+
+\end{questions}
+\end{document}

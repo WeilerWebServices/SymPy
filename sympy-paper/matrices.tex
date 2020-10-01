@@ -1,0 +1,54 @@
+Besides being an important feature in its own right, computations on
+matrices with symbolic entries are important for many algorithms
+within SymPy.  The following code shows some basic usage of the
+\texttt{Matrix} class.
+\begin{verbatim}
+>>> A = Matrix([[x, x + y], [y, x]])
+>>> A
+Matrix([
+[x, x + y],
+[y,     x]])
+\end{verbatim}
+
+SymPy matrices support common symbolic linear algebra manipulations, including
+matrix addition, multiplication, exponentiation, computing determinants,
+solving linear systems, singular values, and computing inverses using LU
+decomposition, LDL decomposition, Gauss-Jordan elimination, Cholesky
+decomposition, Moore-Penrose pseudoinverse, or adjugate matrices.
+
+All operations are performed symbolically. For instance, eigenvalues are computed
+by generating the characteristic polynomial using the Berkowitz algorithm and
+then finding its zeros using polynomial routines.
+
+\begin{verbatim}
+>>> A.eigenvals()
+{x - sqrt(y*(x + y)): 1, x + sqrt(y*(x + y)): 1}
+\end{verbatim}
+
+Internally these matrices store the elements as Lists of Lists (LIL)~\cite{scipy}, meaning
+the matrix is stored as a list of lists of entries (effectively, the
+input format used to create the matrix \texttt{A} above), making it a
+dense representation.\footnote{Similar to the polynomials submodule, dense here
+  means that all entries are stored in memory, contrasted with a sparse
+  representation where only nonzero entries are stored.} For storing sparse
+matrices, the \verb|SparseMatrix| class can be used. Sparse matrices store
+their elements in Dictionary of Keys (DOK) format, meaning that the entries are stored
+as a \texttt{dict} of \texttt{(row, column)} pairs mapping to the elements.
+
+SymPy also supports matrices with symbolic dimension values. \verb|MatrixSymbol|
+represents a matrix with dimensions $m\times n$, where $m$ and $n$ can be
+symbolic. Matrix addition and multiplication, scalar operations, matrix inverse,
+and transpose are stored symbolically as matrix expressions.
+
+Block matrices are also implemented in SymPy. \verb|BlockMatrix| elements can
+be any matrix expression, including explicit matrices, matrix symbols, and
+other block matrices. All functionalities of matrix expressions are also
+present in \verb|BlockMatrix|.
+
+When symbolic matrices are combined with the assumptions submodule for logical
+inference, they provide powerful reasoning over invertibility,
+semi-definiteness, orthogonality, etc., which are valuable in the construction
+of numerical linear algebra systems~\cite{rocklin2013mathematically}.
+
+More examples for \verb|Matrix| and \verb|BlockMatrix| may be found in
+section~\ref{S-suppsec:examples} of the supplementary material.

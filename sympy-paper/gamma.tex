@@ -1,0 +1,37 @@
+\href{http://sympygamma.com}{SymPy Gamma} is a simple web application that
+runs on the Google App Engine~\cite{ciurana2009developing}. It executes and
+displays the results of SymPy expressions as well as additional related
+computations, in a fashion similar to that of Wolfram\textbar{}Alpha. For
+instance, entering an integer will display its prime factors, digits in the
+base-10 expansion, and a factorization diagram. Entering a function will
+display its docstring; in general, entering an arbitrary expression will
+display its derivative, integral, series expansion, plot, and roots.
+
+SymPy Gamma also has several features beyond just computing the
+results using SymPy.
+
+\begin{itemize}
+\item
+  SymPy Gamma displays integration and differentiation steps in detail, as
+  demonstrated in Figure~\ref{fig:integralsteps}.\par
+  {
+    \centering
+    \includegraphics[width=0.7\textwidth]{supp-fig2-integral_steps.png}
+    \captionof{figure}{\href{http://www.sympygamma.com/input/?i=integrate+tan\%28x\%29}{Integral steps of $\tan (x)$}.}\label{fig:integralsteps}
+    \par
+  }
+\item
+  SymPy Gamma displays the factor tree diagrams for different numbers.
+\item
+  SymPy Gamma saves user search queries.
+\end{itemize}
+Every input query from the user on SymPy Gamma is first parsed by its
+own parser capable of handling several different forms of function names
+which SymPy as a library does not support. For instance, SymPy Gamma
+supports queries like \texttt{sin\ x}, whereas SymPy will only recognise
+\verb|sin(x)|.
+
+This parser converts the input query to the equivalent SymPy readable code,
+which is then processed by SymPy, and the result is finally printed with the
+built-in MathJax~\cite{cervone2012mathjax} output and rendered by the SymPy
+Gamma web application.

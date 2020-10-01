@@ -1,0 +1,57 @@
+%% Stats
+The \verb|sympy.stats| submodule provides random variable types and methods for
+computing statistical properties of expressions involving random
+variables, which can be either continuous or discrete, the latter ones being
+further divided into finite and infinite. The variables are associated
+with probability densities on corresponding domains and internally defined
+in terms of probability spaces.
+Apart from the possibility of defining the random variables from a user supplied
+density distribution, SymPy provides definitions of most common
+distributions, including \texttt{Uniform}, \texttt{Poisson}, \texttt{Normal},
+\texttt{Binomial}, \texttt{Bernoulli}, and many others.
+
+Properties of random expressions can be calculated using, e.g.,
+\texttt{expectation} (abbreviated \texttt{E}) and \texttt{variance} to
+calculate expectation and variance. Internally, these functions generate
+integrals and summations, which are automatically evaluated. The evaluation
+can be suppressed using \texttt{evaluate=False} keyword argument.
+
+Conditions on random variables can be defined with inequalities, equalities,
+and logical operators and their overall probabilities are obtained using
+\texttt{P}. The features can be illustrated on a model of two dice throws:
+\begin{verbatim}
+>>> from sympy.stats import Die, P, E
+>>> X, Y = Die("X"), Die("Y")
+>>> P(Eq(X, 6) & Eq(Y, 6))
+1/36
+>>> P(X>Y)
+5/12
+\end{verbatim}
+The conditions can also be supplied as a second parameter to \texttt{E},
+\texttt{P}, and other methods to calculate the property given the condition:
+\begin{verbatim}
+>>> E(X, X+Y<5)
+5/3
+\end{verbatim}
+
+Using the facilities of the \texttt{sympy.stats} submodule, one can, for
+example, calculate
+%Using the above-mentioned features, it is easy to calculate, for example
+the well known properties of the Maxwellian velocity distribution.
+\begin{verbatim}
+>>> from sympy.stats import Maxwell, density
+>>> kT, m, t = symbols("kT m t", positive=True)
+>>> v = Maxwell("v", sqrt(kT/m))
+>>> E(v)                                # mean velocity
+2*sqrt(2)*sqrt(kT)/(sqrt(pi)*sqrt(m))
+>>> E(v, evaluate=False)                # unevaluated mean velocity
+Integral(sqrt(2)*m**(3/2)*v**3*exp(-m*v**2/(2*kT))/(sqrt(pi)*kT**(3/2)),
+(v, 0, oo))
+>>> E(m*v**2/2)                         # mean energy
+3*kT/2
+>>> solve(density(v)(t).diff(t), t)[0]  # most probable velocity
+sqrt(2)*sqrt(kT)/sqrt(m)
+\end{verbatim}
+
+More information on the \texttt{sympy.stats} submodule can be found in
+\cite{rocklin2012symbolic}.

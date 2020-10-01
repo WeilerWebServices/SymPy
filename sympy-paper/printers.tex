@@ -1,0 +1,63 @@
+SymPy has a rich collection of expression printers. By default, an interactive
+Python session will render the \verb|str| form of an expression, which has
+been used in all the examples in this paper so far. The \verb|str| form of an
+expression is valid Python and roughly matches what a user would type to enter
+the expression.\footnote{\label{note:repr}Many Python libraries distinguish the \texttt{str}
+  form of an object, which is meant to be human-readable, and the
+  \texttt{repr} form, which is mean to be valid Python that recreates the
+  object. In SymPy, \texttt{str(expr) == repr(expr)}. In other words, the
+  string representation of an expression is designed to be compact,
+  human-readable, and valid Python code that could be used to recreate the
+  expression. As noted in section~\ref{sec:core}, the \texttt{srepr}
+  function prints the exact, verbose form of an expression.}
+
+\begin{verbatim}
+>>> phi0 = Symbol('phi0')
+>>> str(Integral(sqrt(phi0), phi0))
+'Integral(sqrt(phi0), phi0)'
+\end{verbatim}
+
+A two-dimensional (2D) textual representation of the expression can
+be printed with monospace fonts via \verb|pprint|.
+Unicode characters are used for rendering mathematical symbols such as integral signs,
+square roots, and parentheses. Greek letters and subscripts in symbol names
+that have Unicode code points associated
+are also rendered automatically.
+% TODO cite unicode?
+
+\noindent
+\includegraphics[width=1\textwidth]{pprint.pdf}
+Alternately, the \verb|use_unicode=False| flag can be set, which causes the
+expression to be printed using only ASCII characters.
+% TODO cite ASCII
+
+\begin{verbatim}
+>>> pprint(Integral(sqrt(phi0 + 1), phi0), use_unicode=False)
+  /
+ |
+ |   __________
+ | \/ phi0 + 1  d(phi0)
+ |
+/
+\end{verbatim}
+
+The function \verb|latex| returns a \LaTeX{} representation of an expression.
+% TODO cite latex
+
+\begin{verbatim}
+>>> print(latex(Integral(sqrt(phi0 + 1), phi0)))
+\int \sqrt{\phi_{0} + 1}\, d\phi_{0}
+\end{verbatim}
+
+Users are encouraged to run the \verb|init_printing| function at the beginning
+of interactive sessions, which automatically enables the best pretty printing
+supported by their environment. In the Jupyter Notebook or Qt
+Console~\cite{perez2007ipython}, the \LaTeX{} printer is used to render
+expressions using MathJax or \LaTeX{}, if it is installed on the system. The
+2D text representation is used otherwise.
+
+Other printers such as MathML are also available. SymPy uses an extensible
+printer subsystem, which allows extending any given printer, and also allows
+custom objects to define their printing behavior for any printer. The code
+generation functionality of SymPy relies on this subsystem to convert
+expressions into code in various target programming languages.

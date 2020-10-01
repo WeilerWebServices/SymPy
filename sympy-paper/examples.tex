@@ -1,0 +1,192 @@
+This section provides some additional examples for the features listed
+in the paper.
+
+\subsection{Simplification}
+\begin{itemize}
+\item \texttt{expand}:
+\begin{verbatim}
+>>> expand((x + y)**3)
+x**3 + 3*x**2*y + 3*x*y**2 + y**3
+\end{verbatim}
+
+\item \texttt{factor}:
+\begin{verbatim}
+>>> factor(x**3 + 3*x**2*y + 3*x*y**2 + y**3)
+(x + y)**3
+\end{verbatim}
+
+\item \texttt{collect}:
+\begin{verbatim}
+>>> collect(y*x**2 + 3*x**2 - x*y + x - 1, x)
+x**2*(y + 3) + x*(-y + 1) - 1
+\end{verbatim}
+
+\item \texttt{cancel}:
+\begin{verbatim}
+>>> cancel((x**2 + 2*x + 1)/(x**2 - 1))
+(x + 1)/(x - 1)
+\end{verbatim}
+
+\item \texttt{apart}:
+\begin{verbatim}
+>>> apart((x**3 + 4*x - 1)/(x**2 - 1))
+x + 3/(x + 1) + 2/(x - 1)
+\end{verbatim}
+
+\item \texttt{trigsimp}:
+\begin{verbatim}
+>>> trigsimp(cos(x)**2*tan(x) - sin(2*x))
+-sin(2*x)/2
+\end{verbatim}
+
+\item \texttt{hyperexpand} (showing ${{}_{2}F_{1}\left(\begin{matrix} 1, 1 \\
+        2 \end{matrix}\middle| {- x} \right)} = \frac{\log{\left (x + 1 \right )}}{x}$):
+\begin{verbatim}
+>>> hyperexpand(hyper([1, 1], [2], -x))
+log(x + 1)/x
+\end{verbatim}
+\end{itemize}
+
+\subsection{Polynomials}
+%% TODO - explain why these matter
+\begin{itemize}
+\item Factorization:
+\begin{verbatim}
+>>> t = symbols('t')
+>>> f = (2115*x**4*y + 45*x**3*z**3*t**2 - 45*x**3*t**2 -
+...      423*x*y**4 - 47*x*y**3 + 141*x*y*z**3 + 94*x*y*z*t -
+...      9*y**3*z**3*t**2 + 9*y**3*t**2 - y**2*z**3*t**2 +
+...      y**2*t**2 + 3*z**6*t**2 +  2*z**4*t**3 - 3*z**3*t**2 -
+...      2*z*t**3)
+>>> factor(f)
+(t**2*z**3 - t**2 + 47*x*y)*(2*t*z + 45*x**3 - 9*y**3 - y**2 +
+ 3*z**3)
+\end{verbatim}
+
+\item Gr\"{o}bner bases:
+\begin{verbatim}
+>>> x0, x1, x2 = symbols('x0 x1 x2')
+>>> I = [x0 + 2*x1 + 2*x2 - 1,
+...      x0**2 + 2*x1**2 + 2*x2**2 - x0,
+...      2*x0*x1 + 2*x1*x2 - x1]
+>>> groebner(I, order='lex')
+GroebnerBasis([7*x0 - 420*x2**3 + 158*x2**2 + 8*x2 - 7,
+7*x1 + 210*x2**3 - 79*x2**2 + 3*x2,
+84*x2**4 - 40*x2**3 + x2**2 + x2], x0, x1, x2, domain='ZZ',
+order='lex')
+\end{verbatim}
+
+\item Root isolation:
+\begin{verbatim}
+>>> f = 7*z**4 - 19*z**3 + 20*z**2 + 17*z + 20
+>>> intervals(f, all=True, eps=0.001)
+([],
+ [((-425/1024 - 625*I/1024, -1485/3584 - 2185*I/3584), 1),
+  ((-425/1024 + 2185*I/3584, -1485/3584 + 625*I/1024), 1),
+  ((3175/1792 - 2605*I/1792, 1815/1024 - 10415*I/7168), 1),
+  ((3175/1792 + 10415*I/7168, 1815/1024 + 2605*I/1792), 1)])
+\end{verbatim}
+\end{itemize}
+\subsection{Solvers}
+
+\begin{itemize}
+\item Single solution:
+\begin{verbatim}
+>>> solveset(x - 1, x)
+{1}
+\end{verbatim}
+
+\item Finite solution set, quadratic equation:
+\begin{verbatim}
+>>> solveset(x**2 - pi**2, x)
+{-pi, pi}
+\end{verbatim}
+
+\item No solution:
+\begin{verbatim}
+>>> solveset(1, x)
+EmptySet()
+\end{verbatim}
+
+\item Interval solution:
+\begin{verbatim}
+>>> solveset(x**2 - 3 > 0, x, domain=S.Reals)
+(-oo, -sqrt(3)) U (sqrt(3), oo)
+\end{verbatim}
+
+\item Infinitely many solutions:
+% SymPy 1.0 sstr() prints S.Complexes incorrectly
+% no-doctest
+\begin{verbatim}
+>>> solveset(x - x, x, domain=S.Reals)
+(-oo, oo)
+>>> solveset(x - x, x, domain=S.Complexes)
+S.Complexes
+\end{verbatim}
+
+\item Linear systems (\texttt{linsolve})
+\begin{verbatim}
+>>> A = Matrix([[1, 2, 3], [4, 5, 6], [7, 8, 10]])
+>>> b = Matrix([3, 6, 9])
+>>> linsolve((A, b), x, y, z)
+{(-1, 2, 0)}
+>>> linsolve(Matrix(([1, 1, 1, 1], [1, 1, 2, 3])), (x, y, z))
+{(-y - 1, y, 2)}
+\end{verbatim}
+\end{itemize}
+
+Below are examples of \texttt{solve} applied to problems not yet handled by \texttt{solveset}.
+
+\begin{itemize}
+\item Nonlinear (multivariate) system of equations (the intersection of a circle
+and a parabola):
+\begin{verbatim}
+>>> solve([x**2 + y**2 - 16, 4*x - y**2 + 6], x, y)
+[(-2 + sqrt(14), -sqrt(-2 + 4*sqrt(14))),
+ (-2 + sqrt(14), sqrt(-2 + 4*sqrt(14))),
+ (-sqrt(14) - 2, -I*sqrt(2 + 4*sqrt(14))),
+ (-sqrt(14) - 2, I*sqrt(2 + 4*sqrt(14)))]
+\end{verbatim}
+
+\item Transcendental equations:
+\begin{verbatim}
+>>> solve((x + log(x))**2 - 5*(x + log(x)) + 6, x)
+[LambertW(exp(2)), LambertW(exp(3))]
+>>> solve(x**3 + exp(x))
+[-3*LambertW((-1)**(2/3)/3)]
+\end{verbatim}
+\end{itemize}
+
+\subsection{Matrices}
+
+\begin{itemize}
+\item Matrix expressions
+\begin{verbatim}
+>>> m, n, p = symbols('m n p', integer=True)
+>>> R = MatrixSymbol('R', m, n)
+>>> S = MatrixSymbol('S', n, p)
+>>> T = MatrixSymbol('T', m, p)
+>>> U = R*S + 2*T
+>>> U.shape
+(m, p)
+>>> U[0, 1]
+2*T[0, 1] + Sum(R[0, _k]*S[_k, 1], (_k, 0, n - 1))
+\end{verbatim}
+
+\item Block Matrices
+\begin{verbatim}
+>>> n, m, l = symbols('n m l')
+>>> X = MatrixSymbol('X', n, n)
+>>> Y = MatrixSymbol('Y', m ,m)
+>>> Z = MatrixSymbol('Z', n, m)
+>>> B = BlockMatrix([[X, Z], [ZeroMatrix(m, n), Y]])
+>>> B
+Matrix([
+[X, Z],
+[0, Y]])
+>>> B[0, 0]
+X[0, 0]
+>>> B.shape
+(m + n, m + n)
+\end{verbatim}
+\end{itemize}

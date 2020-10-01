@@ -1,0 +1,228 @@
+Software architecture is of central importance in any large software
+project because it establishes predictable patterns of usage and
+development~\cite{Shaw1996}. This section describes the essential
+structural components of SymPy, provides justifications for the design
+decisions that have been made, and gives example
+user-facing code as appropriate.
+
+\subsection{The Core}
+\label{sec:core}
+A computer algebra system stores mathematical expressions as data structures.
+For example, the mathematical expression $x + y$ is represented as a tree with
+three nodes, $+$, $x$, and $y$, where $x$ and $y$ are ordered children of $+$.
+As users manipulate mathematical expressions with traditional mathematical
+syntax, the CAS manipulates the underlying data structures. Symbolic
+computations such as integration, simplification, etc.\ are all functions that
+consume and produce expression trees.
+
+In SymPy every symbolic expression is an instance of the class
+\texttt{Basic},\footnote{Some internal classes, such as those used in the
+  polynomial submodule, do not follow this rule for efficiency reasons.} the
+superclass of all SymPy types providing common methods to all SymPy
+tree-elements, such as traversals. The children of a node in the tree are held
+in the \texttt{args} attribute. A leaf node in the expression tree
+has empty \texttt{args}.
+
+For example, consider the expression $xy + 2$:
+\begin{verbatim}
+>>> x, y = symbols('x y')
+>>> expr = x*y + 2
+\end{verbatim}
+By order of operations, the parent of the expression tree for \texttt{expr} is
+an addition. It is of type \texttt{Add}. The child nodes of \texttt{expr} are
+\texttt{2} and \texttt{x*y}.
+\begin{verbatim}
+>>> type(expr)
+<class 'sympy.core.add.Add'>
+>>> expr.args
+(2, x*y)
+\end{verbatim}
+
+Descending further down into the expression tree yields the full expression. For
+example, the next child node (given by \texttt{expr.args[0]}) is
+\texttt{2}. Its class is \texttt{Integer}, and it has an empty \texttt{args}
+tuple, indicating that it is a leaf node.
+\begin{verbatim}
+>>> expr.args[0]
+2
+>>> type(expr.args[0])
+<class 'sympy.core.numbers.Integer'>
+>>> expr.args[0].args
+()
+\end{verbatim}
+Symbols or symbolic constants, like $e$ or $\pi$, are other examples of
+leaf nodes.
+\begin{verbatim}
+>>> exp(1)
+E
+>>> exp(1).args
+()
+>>> x.args
+()
+\end{verbatim}
+
+A useful way to view an expression tree is using the \texttt{srepr} function, which
+returns a string representation of an expression as valid Python code\footnote{
+\label{note:dotprint}
+The \texttt{dotprint} function from the \texttt{sympy.printing.dot} submodule
+prints output to dot format, which can be rendered with Graphviz to
+visualize expression trees graphically.}
+with all the nested class constructor calls to create the given expression.
+\begin{verbatim}
+>>> srepr(expr)
+"Add(Mul(Symbol('x'), Symbol('y')), Integer(2))"
+\end{verbatim}
+
+Every SymPy expression satisfies a key identity invariant:
+\begin{verbatim}
+expr.func(*expr.args) == expr
+\end{verbatim}
+This means that expressions are
+rebuildable from their \texttt{args}.\footnote{\texttt{expr.func} is used
+instead of \texttt{type(expr)} to allow the function of an expression to be
+distinct from its actual Python class. In most cases the two are the same.}
+Note that in SymPy the \texttt{==} operator represents exact
+structural equality, not mathematical equality. This allows testing if any two
+expressions are equal to one another as expression trees. For example, even
+though ${(x + 1)}^2$ and $x^2 + 2x + 1$ are equal mathematically, SymPy gives
+\begin{verbatim}
+>>> (x + 1)**2 == x**2 + 2*x + 1
+False
+\end{verbatim}
+because they are different as expression trees (the former is a \verb|Pow|
+object and the latter is an \verb|Add| object).
+
+Another important property of SymPy expressions is that they are immutable.
+This simplifies the design of SymPy, and enables expression interning. It also
+enables expressions to be hashed, which allows expressions to be used as keys
+in Python dictionaries, and is used to implement caching in SymPy.
+
+Python allows classes to override mathematical operators. The Python
+interpreter translates the above \texttt{x*y + 2} to, roughly,
+\verb|(x.__mul__(y)).__add__(2)|. Both \texttt{x} and \texttt{y}, returned
+from the \texttt{symbols} function, are \texttt{Symbol} instances. The
+\texttt{2} in the expression is processed by Python as a literal, and is
+stored as Python's built in \texttt{int} type. When \texttt{2} is passed to the
+\verb|__add__| method of \texttt{Symbol}, it is converted to the SymPy type
+\verb|Integer(2)| before being stored in the resulting expression tree. In
+this way, SymPy expressions can be built in the natural way using Python
+operators and numeric literals.
+
+%% TODO: describe how assumptions are implemented
+
+%%
+%% Extensibility
+\subsection{Extensibility}
+
+While the core of SymPy is relatively small, it has been extended to a wide variety
+of domains by a broad range of contributors.
+This is due, in part, to the fact that the same language, Python,
+is used both for the internal implementation and the external usage by users.
+All of the extensibility capabilities available to
+users are also utilized by SymPy itself. This eases the transition pathway from
+SymPy user to SymPy developer.
+
+The typical way to create a custom SymPy object is to subclass an existing
+SymPy class, usually \texttt{Basic}, \texttt{Expr}, or \texttt{Function}. As
+it was stated before, all SymPy classes used for expression trees should be
+subclasses of the base class \texttt{Basic}. \texttt{Expr} is the
+\texttt{Basic} subclass for mathematical objects that can be added and
+multiplied together. The most commonly seen classes in SymPy are subclasses of
+\texttt{Expr}, including \texttt{Add}, \texttt{Mul}, and \texttt{Symbol}.
+Instances of \texttt{Expr} typically represent complex numbers, but may also
+include other ``rings'', like matrix expressions. Not all SymPy classes are
+subclasses of \texttt{Expr}. For instance, logic expressions, such as
+\verb|And(x, y)|, are subclasses of \texttt{Basic} but not of
+\texttt{Expr}.\footnote{See section~\ref{S-suppsec:Logic} of the supplementary
+  material for more information on the
+  \texttt{sympy.logic} submodule.}
+
+The \texttt{Function} class is a subclass of \texttt{Expr} which makes it
+easier to define mathematical functions called with arguments. This includes
+named functions like $\sin(x)$ and $\log(x)$ as well as undefined functions
+like $f(x)$. Subclasses of \texttt{Function} should define a
+class method \texttt{eval}, which returns an evaluated value for the function
+application (usually an instance of some other class, e.g., a \texttt{Number}),
+or \texttt{None} if for the given arguments it should not be
+automatically evaluated.
+
+Many SymPy functions perform various evaluations down the expression tree.
+Classes define their behavior in such functions by defining a relevant
+\verb|_eval_|\texttt{\textit{*}} method. For instance, an object can indicate
+to the \texttt{diff} function how to take the derivative of itself by defining
+the \verb|_eval_derivative(self, x)| method, which may in turn call
+\texttt{diff} on its \texttt{args}. (Subclasses of \texttt{Function} should
+implement the \texttt{fdiff} method instead; it returns the derivative of the function
+without considering the chain rule.) The most common
+\verb|_eval_|\texttt{\textit{*}} methods relate to the assumptions:
+\verb|_eval_is_|\texttt{\textit{assumption}} is used to deduce
+\textit{assumption} on the object.
+
+Listing~\ref{fig:gamma-example} presents an example of this extensibility. It
+gives a stripped down version of the \texttt{gamma} function $\Gamma(x)$ from
+SymPy. The methods defined allow it to evaluate itself on positive integer
+arguments, define the real assumption, allow it to be rewritten in terms of
+factorial (with \verb|gamma(x).rewrite(factorial)|), and allow it to be
+differentiated. \texttt{self.func} is used throughout instead of referencing
+\texttt{gamma} explicitly so that potential subclasses of \texttt{gamma} can
+reuse the methods.
+
+\lstset{
+  basicstyle=\ttfamily,
+}
+
+\begin{lstlisting}[caption={A minimal implementation of \texttt{sympy.gamma}.},label=fig:gamma-example]
+from sympy import Function, Integer, factorial, polygamma
+
+class gamma(Function):
+    @classmethod
+    def eval(cls, arg):
+        if isinstance(arg, Integer) and arg.is_positive:
+            return factorial(arg - 1)
+
+    def _eval_is_real(self):
+        x = self.args[0]
+        # noninteger means real and not integer
+        if x.is_positive or x.is_noninteger:
+            return True
+
+    def _eval_rewrite_as_factorial(self, z):
+        return factorial(z - 1)
+
+    def fdiff(self, argindex=1):
+        from sympy.core.function import ArgumentIndexError
+        if argindex == 1:
+            return self.func(self.args[0])*polygamma(0, self.args[0])
+        else:
+            raise ArgumentIndexError(self, argindex)
+\end{lstlisting}
+The gamma function implemented in SymPy has many more capabilities than the
+above listing, such as evaluation at rational points and series expansion.
+
+
+\subsection{Performance}
+\label{sec:performance}
+
+Due to being written in pure Python without the use of extension modules,
+SymPy's performance characteristics are generally poorer than that of
+its commercial competitors. For many applications,
+the performance of SymPy, as measured by clock cycles, memory usage, and memory
+layout, is sufficient.
+However, the boundaries for when SymPy's pure Python strategy becomes
+insufficient are when the user requires handling of very long expressions or many
+small expressions. Where this boundray lies depends on the system at hand, but tends
+to be within the range of $10^4$--$10^6$ symbols for modern computers.
+
+For this reason, a new project called SymEngine~\cite{SymEngine} has been started.
+The aim of this poject is to develop a library with better performance
+characteristics for symbolic manipulation. SymEngine is a pure C++ library,
+which allows it fine-grained control over the memory layout of expressions.
+SymEngine has thin wrappers to other languages (Python, Ruby,
+Julia, etc.). Its aim is to be the fastest symbolic manipulation library. Preliminary
+benchmarks suggest that SymEngine performs as well as its commercial and
+open source competitors.
+
+The development version of SymPy has recently started to use SymEngine as an
+optional backend, initially in \texttt{sympy.\allowbreak{}physics.\allowbreak{}mechanics} only.
+Future work will involve
+allowing more algorithms in SymPy to use SymEngine as a backend.

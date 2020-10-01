@@ -1,0 +1,37 @@
+% Polynomials
+
+SymPy implements a suite of algorithms for polynomial manipulation,
+which ranges from relatively simple algorithms for doing arithmetic of
+polynomials, to advanced methods for factoring multivariate polynomials
+into irreducibles, symbolically determining real and complex root isolation
+intervals, or computing Gr\"{o}bner bases.
+
+Polynomial manipulation is useful in its own right. Within SymPy, though, it is mostly used
+indirectly as a tool in other areas of the library. In fact, many mathematical
+problems in symbolic computing are first expressed using entities from the
+symbolic core, preprocessed, and then transformed into a problem in the
+polynomial algebra, where generic and efficient algorithms are used to solve
+the problem.  The solutions to the original problem are subsequently recovered from the results.
+This is a common scheme in symbolic integration or summation algorithms.
+
+SymPy implements dense and sparse polynomial representations.\footnote{In a
+dense representation, the coefficients for all terms up to the degree of each
+variable are stored in memory. In a sparse representation, only the nonzero
+coefficients are stored.} Both are used in the univariate and multivariate
+cases. The dense representation is the default for univariate polynomials. For
+multivariate polynomials, the choice of representation is based on the
+application. The most common case for the sparse representation is algorithms
+for computing Gr\"{o}bner bases (Buchberger, F4, and
+F5)~\cite{Buchberger1965thesis,Faugere1999f4,Faugere2002f5}. This is because
+different monomial orderings can be expressed easily in this representation.
+However, algorithms for computing multivariate GCDs or factorizations, at
+least those currently implemented in SymPy~\cite{paprocki2010thesis},
+are better expressed when the representation is dense. The dense multivariate
+representation is specifically a recursively-dense representation, where
+polynomials in $K[x_0, x_1, \dotsc, x_n]$ are viewed as a polynomials in
+$K[x_0][x_1]\dotso[x_n]$. Note that despite this, the coefficient domain $K$,
+can be a multivariate polynomial domain as well. The dense recursive
+representation in Python gets inefficient as the number of variables increases.
+
+Some examples for the \texttt{sympy.polys} submodule can be found in
+section~\ref{S-suppsec:examples} of the supplementary material.

@@ -1,0 +1,61 @@
+#! /usr/bin/env python
+
+import os
+import babel
+import babel.dates
+import hashlib
+import datetime
+from gettext import GNUTranslations
+
+from jinja2 import Environment, FileSystemLoader
+
+def md5_filter(value):
+    return hashlib.md5(value).hexdigest()
+
+def format_datetime(year, month, day):
+    return babel.dates.format_date(datetime.date(year, month, day),
+                                   locale=env.globals["locale"])
+
+env = Environment(loader=FileSystemLoader('templates'),
+        extensions=['jinja2.ext.i18n'])
+env.filters["md5"] = md5_filter
+env.globals["datetime"] = format_datetime
+
+templates = [
+    "index.html",
+    "features.html",
+    "download.html",
+    "docs.html",
+    "support.html",
+    "development.html",
+    "roadmap.html",
+    "donate.html",
+    ]
+
+# Sorted alphabetically:
+languages = ["cs", "de", "en", "fr", "nl", "pt", "ru", "zh", "es"]
+
+for language in languages:
+    print("Generating '%s' pages" % language)
+
+    env.globals["locale"] = language
+    if language == "en":
+        # The templates are written in English, so they don't need to be
+        # translated
+        env.install_null_translations()
+    else:
+        translations = GNUTranslations(open("i18n/%s.mo" % language, 'rb'))
+        env.install_gettext_translations(translations)
+
+    for template in templates:
+        t = env.get_template(template)
+        print("    Processing '%s'" % template)
+        name = os.path.splitext(template)[0]
+        s = t.render({name + "_active": "active"})
+        os.makedirs(language, exist_ok=True)
+        f = open(os.path.join(language, template), "wb")
+        try:
+          f.write(s.encode("utf-8"))
+          f.write(b"\n")
+        finally:
+          f.close()

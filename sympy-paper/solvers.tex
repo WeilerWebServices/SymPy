@@ -1,0 +1,40 @@
+SymPy has equation solvers that can handle ordinary differential equations,
+recurrence relationships, Diophantine equations\footnote{See
+  section~\ref{S-suppsec:Dioph} of the supplementary material for an in depth
+  discussion on the Diophantine submodule.}, and algebraic equations. There is
+also rudimentary support for simple partial differential equations.
+
+There are two functions for solving algebraic equations in SymPy:
+\texttt{solve} and \texttt{solveset}.
+\texttt{solveset} has several design changes with respect to the older
+\texttt{solve} function. This distinction is present in order to resolve the
+usability issues with the
+previous \texttt{solve} function API while maintaining backward compatibility
+with earlier versions of SymPy.
+\texttt{solveset} only requires essential input information from the user.
+The function signatures of \texttt{solve} and \texttt{solveset} are
+\begin{verbatim}
+solve(f, *symbols, **flags)
+solveset(f, symbol, domain=S.Complexes)
+\end{verbatim}
+The \texttt{domain} parameter can be any set from the \texttt{sympy.sets}
+module (see section~\ref{S-suppsec:Sets} of the supplementary material for
+details on \texttt{sympy.sets}), but is typically either \texttt{S.Complexes}
+(the default) or \texttt{S.Reals}; the latter causes \texttt{solveset} to only
+return real solutions.
+
+An important difference between the two functions is that the output API of \texttt{solve}
+varies with input (sometimes returning a Python list and sometimes a Python dictionary) whereas
+\texttt{solveset} always returns
+a SymPy set object.
+
+Both functions implicitly assume that expressions are equal to 0. For
+instance, \texttt{solveset(x - 1, x)} solves $x - 1 = 0$ for $x$.
+
+\texttt{solveset} is under active development as a planned replacement for
+\texttt{solve}. There are certain features which are implemented in
+\texttt{solve} that are not yet implemented in \texttt{solveset}, including
+multivariate systems, and some transcendental equations.
+
+Some examples for \texttt{solveset} and \texttt{solve} can be found in
+section~\ref{S-suppsec:examples} of the supplementary material.

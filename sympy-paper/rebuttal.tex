@@ -1,0 +1,949 @@
+\documentclass[answers,12pt]{exam}
+\usepackage{xcolor}
+
+\usepackage{xr-hyper}
+\usepackage{hyperref}
+\externaldocument[P-]{paper}
+\externaldocument[S-]{supplement}
+
+\usepackage{upquote}
+\usepackage{textcomp}
+\usepackage[T1]{fontenc}
+
+\usepackage{pdfpages}
+
+\hypersetup{
+  colorlinks=true,
+  filecolor=black, % color of cross-file links. Black because they only work
+                   % if the paper sits alongside the rebuttal as "paper.pdf".
+  urlcolor=blue % color of external links
+}
+
+\unframedsolutions
+\shadedsolutions
+\renewcommand{\solutiontitle}{}
+
+\begin{document}
+
+\includepdf{coverletter.pdf}
+
+\section{Comments from Editor}
+
+\begin{questions}
+\question I found the \url{http://live.sympy.org/} site very convenient for trying things
+out in SymPy, but it is only mentioned in the supplement, which might be
+overlooked by readers. I suggest moving that section into the main paper, as
+it provides a great way to play along with the examples while reading the
+paper.
+\begin{solution}
+\label{editorpoint1}
+Section (previously) 9 from the supplement was edited and moved to the introduction:
+\begin{quote}
+  All the examples in this paper can be tested on
+  \href{http://live.sympy.org}{SymPy Live}, an online Python shell that uses
+  the Google App Engine to execute SymPy code. SymPy Live is also integrated
+  in the SymPy documentation at
+  \href{http://docs.sympy.org}{http://docs.sympy.org}.
+\end{quote}
+\end{solution}
+\question The Basic Usage section omits what I think is an important point:
+how does one distinguish between evaluating exp(1) in Python and exp(1) in
+SymPy? In other words, how are symbolic constants specified?
+\begin{solution}
+  Both the Python standard library and SymPy have an exp callable, so it depends
+  which symbols are imported in your global namespace: the \texttt{exp}
+  function from the \texttt{math} module or the \texttt{exp} class from \texttt{sympy}.
+  In the later case a special symbolic constant will be produced.
+
+We have added a sentence to the section~\ref{P-sec:core}, that shows symbolic
+constants as an example of leaf nodes:
+\begin{quote}
+Symbols or symbolic constants, like $e$ or $\pi$, are other examples of
+leaf nodes.
+\begin{verbatim}
+>>> exp(1)
+E
+>>> exp(1).args
+()
+>>> x.args
+()
+\end{verbatim}
+\end{quote}
+\end{solution}
+\question The first
+thing I tried after seeing Table 2 (simplication functions) did not work:
+
+\begin{verbatim}
+>>> trigsimp (exp( Matrix(2, 2, [0, -y, y, 0])) )
+\end{verbatim}
+fails to recognize cos and
+sin. Am I expecting too much?
+\begin{solution}
+  This indeed does not work. The implementation in \verb|trigsimp| primarily
+  thus far has focused on transforming trigonometric functions into other
+  trigonometric functions. The ability to simplify complex exponentials is
+  something that we would like to work.
+  \href{https://github.com/sympy/sympy/issues/11459}{Issue 11459} in our
+  public issue tracker tracks this feature.
+\end{solution}
+\question Section 3.6: are eigenvalues and singular
+values included? If not, why not?
+\begin{solution}
+Yes, they are included.  The second example in that section addresses the computation of
+eigenvalues.  Singular values can be computed with
+\texttt{A.singular\_values()}. We have not included this example, as the
+singular value expressions for our example matrix \texttt{A} are quite large,
+but we have added ``singular values'' to the list of features in the second
+paragraph of the section.
+\end{solution}
+\question Like one of the referees, I expected to
+see MPFR mentioned in Section 4.1, at least to mention the pros and cons and
+say why it isn't used.
+\begin{solution}
+
+  The major advantage is that mpmath is a pure Python library. It's slower
+  than MPFR, but not too much to evaluate any reasonably complicated single
+  expression at interactive speed, which covers most use cases in SymPy. We
+  have added a sentence about this to the numerics section.
+
+  We've also mentioned that another advantage is that mpmath is BSD licensed,
+  like SymPy, which is important for the scientific Python ecosystem (MPFR is
+  licensed under the LGPL).
+\end{solution}
+\question Section 4.1: please state whether the syntax for
+functions in mpmath is identical, or not, to that in Sympy.
+\begin{solution}
+The mpmath library is not a SymPy submodule, but a separate library,
+which we have indicated in the text. Most function names in mpmath are the same as SymPy, but it is not true in every case. We have
+added an example to the text showing an instance where they diverge
+(summations).
+\end{solution}
+\question Unless I have
+missed something, a weakness of the paper is that speed is mentioned only
+twice, on lines 496 and 666. My assumption is that SymPy is slow compared with
+its commercial competitors. Please comment on the speed issue, and not just in
+the conclusions.
+\begin{solution}
+Section~\ref{P-sec:performance}, titled ``Performance'' was added to the manuscript, which discusses the
+speed issue and lays out a path forward. The conclusion was simplified.
+\end{solution}
+\question Editors are needed for [20].
+\begin{solution}
+We have done this.
+\end{solution}
+\end{questions}
+
+\section{Reviewer 1}
+\subsection{Basic reporting}
+\begin{questions}
+\question Generally good. A part that confused me is the assertion (footnote 3) that ``If
+$A$ and $B$ are Symbols created with \texttt{commutative=False} then SymPy will keep
+$A\cdot B$
+and $B\cdot A$ distinct.'' Does that mean that BOTH of them must be created this way,
+and that $A$ and $x$ (if $x$ is created normally) will commute? Is there any way to
+declare commutators? How does one guarantee that other pieces of code, e.g.
+Gaussian elimination, respect non-commutativity?
+\begin{solution}
+  We have clarified the footnote. Both expressions must be set as
+  \texttt{commutative=False}. Internally, in \texttt{Mul}, the ``commutative
+  part'' of an expression is pulled out to the front and canonically ordered,
+  and the ``noncommutative part'' is not reordered.
+
+Commutators are implemented in the \texttt{sympy.physics.quantum} submodule and
+are discussed in section~\ref{P-sec:quantum}.
+
+Different algorithms do generally require special consideration for
+noncommutative expressions to be correct. If an algorithm implicitly assumes
+that expressions commute, it may return incorrect results when given a
+noncommutative expression.
+\end{solution}
+
+\question References reasonable, though [8], an excellent reference, makes almost
+precisely the opposite point to that for which it is cited---``simplification
+is not well-defined''. I think the authors are trying to follow [8]'s
+definition of simplification.
+\begin{solution}
+We agree that this is a bad reference, because we are not actually
+using their definition.  Yes, that article rigorously defines
+``simplification'', but it's just one approach.  This citation
+was replaced with a better reference [34], that illustrates our point.
+\end{solution}
+\end{questions}
+
+\subsection{Experimental design}
+\begin{questions}
+\question The referee is asked to comment whether the research is within the scope of the
+journal, defined as ``PeerJ is an Open Access, peer-reviewed, scholarly
+journal. It considers articles in the Biological Sciences, Medical Sciences,
+and Health Sciences. PeerJ does not publish in the Physical Sciences, the
+Mathematical Sciences, the Social Sciences, or the Humanities (except where
+articles in those areas have clear applicability to the core areas of
+Biological, Medical or Health sciences).''
+
+Hence I fear a software description on the maths/cmputing boundary with no
+cited applications is out of scope.
+
+\begin{solution}
+  The editor has confirmed that the paper is in scope for PeerJ Computer Science.
+\end{solution}
+\end{questions}
+
+\subsection{Validity of the findings}
+\begin{questions}
+\question There are no findings as such, since this is a software description, not an
+experimental paper.
+\end{questions}
+
+\subsection{Comments for the author}
+\begin{questions}
+\question Nice paper --- pity it seems totally out of scope. Why not J. Symbolic
+Computation or some such?
+\begin{solution}
+  See above.
+\end{solution}
+\end{questions}
+
+\section{Reviewer 2}
+
+\subsection{Basic reporting}
+No Comments.
+
+\subsection{Experimental design}
+No Comments
+
+\subsection{Validity of the findings}
+\begin{questions}
+\question There is a minor problem with the supplementary notebook
+
+The final cell is
+
+% This depends on matplotlib. We want to make sure the rest of the paper
+% doesn't depend on it, so skip.
+% no-doctest
+\begin{verbatim}
+>>> circuit_plot(fourier, nqubits=3);
+plt.savefig('./images/fig1-circuitplot-qft.pdf', format='pdf')
+\end{verbatim}
+
+This fails if the user does not have an images folder.
+\begin{solution}
+We have added
+
+\begin{verbatim}
+%mkdir -p './images'
+\end{verbatim}
+
+to the cell before the call to \verb|savefig|.
+\end{solution}
+
+\question I suggest removing the \verb|>>>| before each line. It looks strange in a notebook.
+\begin{solution}
+We have done this.
+\end{solution}
+\end{questions}
+\subsection{Comments for the author}
+Sympy is a superb package and I am happy to see that there is now a paper that describes its current state. Here are a few comments that you may wish to consider before publication.
+
+\begin{questions}
+\question Line 105
+It is generally frowned upon to import all symbols from a Python module in this manner.
+I understand why you are doing it in this paper, it makes subsequent sympy commands less verbose.
+It might, however, encourage bad practice. It may also lead to a poor user experience for newbies.
+\label{rev2point1}
+
+For example, say I had the following code
+
+\begin{verbatim}
+from numpy import sin, array
+test=array(123)
+sin(test)
+\end{verbatim}
+
+I decide that I want to use sympy for something and, following your example, do
+
+\begin{verbatim}
+from numpy import sin, array
+from sympy import *
+x,y,z=symbols("x,y,z")
+test=array(123)
+sin(test)
+\end{verbatim}
+
+The code will break because sympy has it's own sin that gets imported that doesn't work on numpy arrays. As a newbie, I might not know this.
+I tested using Sympy 1.0 and Python 3.
+
+Later in the text, a similar assertion is made by you (line 485) in reference to a different package that may break sympy.
+
+\begin{solution}
+We have used \verb|import *| on purpose, as we felt that explicitly importing
+names would unnecessarily distract from the content of the paper, but the
+reviewer is absolutely right that this is bad practice for actual code. We
+have added a footnote:
+\begin{quote}\texttt{import *} has been used here to aid the
+  readability of the paper, but is best to avoid such wildcard import
+  statements in production code, as they make it unclear which names are
+  present in the namespace. Furthermore, imported names could clash with
+  already existing imports from another package. For example, SymPy, the
+  standard Python \texttt{math} library, and NumPy all define the \texttt{exp}
+  function, but only the SymPy one will work with SymPy symbolic expressions.
+\end{quote}
+
+We have also removed the reference to \texttt{from mpmath import *} from line 485.
+\end{solution}
+
+\question Lines 151--153
+Minor comment: srepr is a useful command. As someone who also uses Mathematica, I wonder if there is a sympy version of the TreeForm command which produces a visualisation of the expression tree, or maybe an output format that I could pass to a graph library for visualisation?
+
+\begin{solution}
+We have added a footnote about the \texttt{dotprint} function (footnote~\ref{P-note:dotprint}),
+which outputs expressions in the dot format that can be rendered with Graphviz.
+\end{solution}
+
+\question Section 2.3: Assumptions
+Is there a way of the user listing all available assumptions?
+
+\begin{solution}
+  To access this in code, the only way is
+\begin{verbatim}
+from sympy.core.assumptions import _assume_defined
+\end{verbatim}
+  but as this is a private variable (it begins with an underscore), it is not
+  considered part of the public API, so we do not wish to recommend it in the
+  paper. The recommended list is in the SymPy documentation, at
+  \url{http://docs.sympy.org/latest/modules/core.html#module-sympy.core.assumptions}.
+  We have opened \href{https://github.com/sympy/sympy/issues/11539}{issue 11539}
+  to track this in our issue tracker.
+\end{solution}
+\question Section 2.4
+Line 216: This is due in part because the same language, Python, is used both for the internal implementation and the external usage by users.
+
+This reads badly. Perhaps the following might be better?
+
+This is due, in part, to the fact that the same language, Python, is used both for the internal implementation and the external usage by users.
+
+\begin{solution}
+We have changed the sentence as suggested.
+\end{solution}
+\question Line 221:
+the phrase `Expression tree' is cited but this is not the first time you've used it. Perhaps cite earlier? Line 129 perhaps?
+
+\begin{solution}
+The footnote here was in reference to the SymPy classes. We have moved the
+footnote later in the sentence, to ``\texttt{Basic}'', as suggested
+by reviewer 3, point~\ref{rev3point16}.
+\end{solution}
+\question Page 8: Footnote 5
+The line reads
+
+\begin{quote}
+The measure parameter of the simplify function lets specify the Python function used to determine how
+\end{quote}
+
+should this be
+\begin{quote}
+The measure parameter of the simplify function lets the user specify the Python function used to determine how
+\end{quote}
+\begin{solution}
+We have changed the sentence as suggested.
+\end{solution}
+\question Section 4.1
+Should mpmath be cited here?
+
+\begin{solution}
+We have added a citation for mpmath.
+\end{solution}
+\end{questions}
+
+\section{Reviewer 3}
+
+\begin{questions}
+\question The paper introduces SymPy, a well-known pure Python library for
+symbolic computation. It covers many aspects of the library: architecture,
+basic usage, overview of modules, a more detailed look into some of them, and
+physics application.
+
+The writing style is mostly clear and easy to understand. Some example code is
+provided to further explain the use of various module, classes, and functions.
+Unfortunately, the paper is very unconnected and disorganized, with some
+unnecessary repetition and some things left undefined. Further, parts of the
+supplement should be moved to the main paper and vice versa. All of this makes
+the paper look more like a collection of unconnected or, at best, very loosely
+connected parts, instead of a meaningful whole.
+
+Another big problem of the paper is the lack of aim. Some parts of SymPy are
+covered at informative level (short descriptions of the elements related to
+some subject), some at the beginners level (basic usage examples), while some
+go deep in internal SymPy implementation of certain features. This structure
+leaves the impression that different, yet mutually intermingled sections aim
+at different audiences.
+
+Moreover, these vastly differently approached elements come in no specific
+order, and with no obvious reason why each of them is picked to be covered at
+all and, specifically, at the chosen level of complexity in the approach.
+
+I suggest a major rewrite of the paper, to improve the structure and group differently approached subjects. It would probably be best to:
+\begin{enumerate}
+\item Create a new section (following the introduction of SymPy) on projects that use SymPy, and put in it the materials currently available in supplement's sections 8, 9, 11. The comparison with Mathematica (supplement's section 10) should be moved either to the introduction as a section, or right after the introduction as its own section, but it should not be in the middle of the description of SymPy-powered projects.
+\item  This should be followed by the list of SymPy packages and modules (currently section 3) and descriptions of selected modules (currently sections 3.1, 3.3, 3.5, supplement's sections 5, 7, and 9).
+\item Now, basic usage can be given as its own section (currently done in sections 2.1 and 2.3), followed by introductions on usage of various modules (currently in sections 3.2, 3.4, 3.6, 4, 5, and supplement's sections 2, 3, 4, 6).
+\item In-depth architecture (most of the so far unmentioned sections) can be given either as its own section, or made into a supplement of its own (as it is naturally far more technical and less interesting to general audience).
+\item The current conclusion works fine as the finishing section of the paper.
+\end{enumerate}
+\begin{solution}
+  We have made the following changes to the paper
+
+  \begin{enumerate}
+  \item We have renamed the ``Features'' section to ``Overview of
+    Capabilities'', now section~\ref{P-sec:features}.
+  \item We have renamed the ``Domain Specific Submodules'' section to
+      ``Physics Submodule'', now section~\ref{P-sec:domain_specific} (see point~\ref{rev3point30}).
+  \item We have moved the ``Architecture'' section to the end, after the
+    ``Physics Submodule'' section. It is now section~\ref{P-sec:architecture}.
+  \item We have moved the ``Basic Usage'' subsection to the beginning of the
+    ``Overview of Capabilities'' section (it is now section~\ref{P-sec:basic-usage}), and added an intro paragraph to the
+    ``Overview of Capabilities'' section.
+  \item We have moved the ``Assumptions'' subsection to the ``Overview of
+    Capabilities'' subsection, after the features table. It is now section~\ref{P-sec:assumptions}.
+  \item The ``Comparison with Mathematica'' section has been moved to the end of
+    the supplement, now section~\ref{S-suppsec:comp-mma}.
+  \item The ``Other Projects that
+      Depend on SymPy'' section (which has been renamed from ``Other Projects that
+      Use SymPy'') has been moved from the supplement to the main paper
+      content, now section~\ref{P-sec:other-proj}.
+  \end{enumerate}
+
+We disagree with the reviewer on a few points. We do not consider SymPy Live
+or SymPy Gamma to be key components of SymPy. The goal of the paper is
+to be about the SymPy library. While SymPy Live and SymPy Gamma are
+maintained by the SymPy community, they are separate projects. A
+mention of SymPy Live has been added to the introduction (see editor
+point~\ref{editorpoint1}), as it may assist an interested reader in trying the
+examples from the paper. A mention of SymPy Gamma has been added to the ``Projects that
+Depends on SymPy'' table (Table~\ref{P-projects-table}), now part of the main
+paper (see above). We have
+left the more in depth discussion of SymPy Gamma in the supplement (section~\ref{S-suppsec:sympy-gamma}).
+
+The ``Comparison with Mathematica'' section has been placed in the supplement
+because we do not feel that a treatment in the main manuscript would be fair
+without an equal comparison to other principle computer algebra systems, such
+as Maple, SageMath, and Maxima. Unfortunately, our authorship is inexpert in
+these systems, so a complete and fair comparison is impossible.
+
+We deem all the sections in section 3 (now section~\ref{P-sec:features}) to be important core
+components of the library. Regarding the supplement sections (previously) 5,
+7, and 9---``Sets'', ``Category Theory'', and ``SymPy Live'',
+respectively:
+\begin{itemize}
+\item In SymPy 1.0, the sets submodule is still in
+a relatively infant stage. It is mentioned already in conjunction with the
+\texttt{solveset} function. We have added some additional text to the solvers
+subsection regarding \texttt{sympy.sets}.
+
+\item The category theory submodule in SymPy
+is very domain specific, and independent of other SymPy submodules. It is out of
+scope for an architecture paper.
+
+\item The SymPy Live section was short and would be mostly duplicated by the
+  paragraph that has been added to the introduction in the paper. We have thus
+  removed it.
+\end{itemize}
+
+We also consider the supplement sections (previously) 2, 3, 4, and
+6---``Series'', ``Logic'', ``Diophantine Equations'', and ``Statistics'',
+respectively---to be in depth beyond the goals of the main manuscript:
+
+\begin{itemize}
+\item The ``Series'' section discusses relatively advanced series expansion methods. We
+have added a paragraph detailing basic series expansion to the ``Calculus''
+subsection, with a reference to the more detailed section in the supplement.
+
+\item The ``Logic'' section is alluded to in the ``Assumptions'' subsection,
+  and the submodule is briefly mentioned in the ``Extensibility'' section,
+  but is not discussed in depth in the main manuscript. While the logic
+  submodule is indeed important for certain parts of SymPy, we do not consider
+  it to be of interest to the general reader. Furthermore, on a technical
+  note, the assumptions discussed in the manuscript are the so-called ``old
+  assumptions'', which do not use the \texttt{sympy.logic} submodule discussed
+  in the supplement (they use an implementation of the Rete algorithm, which
+  is separate from \texttt{sympy.logic}). The so-called ``new assumptions'',
+  mentioned briefly in the ``Conclusion and Future Work'' section, does use
+  it, but we have opted to not discuss this submodule in depth, as it is still in
+  development and not fully usable. We have added some text to the assumptions
+  section discussing this and referencing the logic subsection of the
+  supplement (see footnote~\ref{P-note:assumptions}).
+
+\item Regarding the ``Diophantine Solvers'' section, the ``Solvers''
+  subsection already mentions that SymPy can solve Diophantine Equations. The
+  in depth discussion in the supplement
+  is outside of the scope of the main paper, because it's specific, and
+  independent from other parts of SymPy (with the exception of computing integer set
+  intersections in the \texttt{sympy.sets} submodule, no other part of SymPy
+  from solvers uses the Diophantine solvers). We have
+  added a reference to the supplement to the ``Solvers'' subsection.
+
+\item The ``Statistics'' module is not a core module and is independent (no
+  other SymPy submodules depend on it).
+\end{itemize}
+
+The ``Architecture'' section is a key component of the paper. The goal of the
+paper is to discuss the architecture and core features of SymPy. It therefore
+would be inappropriate to move this section to the supplement. We have
+followed the reviewer's advice and moved the architecture section to the end
+of the paper, to make the paper easier to follow.
+\end{solution}
+\end{questions}
+
+\begin{questions}
+
+\question Explaining what Python is (lines 70--72) should go before talking about SymPy as a ``CAS written in Python''. Further, the paper assumes a moderate familiarity with Python (for example, Python's console, OOP, and exceptions), and this should be specified. There should be a short note on the used Python console (\verb|>>>| is the prompt, with the results of computation following immediately in the lines after it). The citation [25] from line 65 should be moved next to ``Python'' in line 70.
+\begin{solution}
+The citation was moved and footnote~\ref{P-note:prompt} for the Python interactive prompt was
+  added where it was used first time. We have also added footnote~\ref{P-note:python} indicating
+  a moderate familiarity with Python is assumed.
+\end{solution}
+
+\question Line 73 has outdated information. Sage was renamed to SageMath and it no longer aims only at pure mathematics but also at algebra, numerical analysis, etc. The reference [40] should be replaced by a more up-to-date one.
+\begin{solution}
+We have updated the name and citation, and changed ``pure mathematics'' to
+``pure and applied mathematics''.
+\end{solution}
+
+\question The plural ``CASs'' is usually written as ``CASes'' or ``CAS's'', with the latter being somewhat problematic due to it looking like it implies possession.
+\begin{solution}
+  Different style guides appear to disagree on the proper way to pluralize
+  non-plural acronyms that end in ``S''. We have been informed by the PeerJ
+  publishing staff that either form (``CASs'' or ``CAS's'') is acceptable, so
+  long as we are consistent. We have chosen ``CAS's'' as suggested, and have
+  changed all instances in the manuscript.
+\end{solution}
+
+\question Line 88 mentions ``printers'', but it doesn't state what they are, which is confusing for those readers that are yet to learn the concept in section 3.4.
+\begin{solution}
+We have changed ``printers'' to ``display formatters'', which is the
+terminology used by Jupyter.
+\end{solution}
+
+\question Also in line 88, Jupyter's citation [30] is actually about IPython and should be replaced by a more up-to-date version.
+\begin{solution}
+We have changed the citation to
+
+Kluyver, T., Ragan-Kelley, B., P{\'e}rez, F.,
+Granger, B., Bussonnier, M., Frederic, J., Kelley, K., Hamrick, J., Grout,
+J., Corlay, S., et al. (2016). Jupyter notebooks---a publishing format for
+reproducible computational workflows. In \textit{Positioning and Power in Academic
+Publishing: Players, Agents and Agendas: Proceedings of the 20th International
+Conference on Electronic Publishing}, page 87. IOS Press.
+
+as recommended by the Jupyter developers at \url{https://github.com/jupyter/jupyter/issues/190}.
+\end{solution}
+
+\question The word ``software'' in line 91 is ambiguous; ``library'' or ``package'' would make a better choice.
+\begin{solution}
+We have changed ``software'' to ``library''.
+\end{solution}
+
+\question Lines 91--96: ``we discuss/look at/etc'' is the preferred form, instead of ``section discusses/looks at/etc''.
+\begin{solution}
+We had decided not to use first person.  We prefer to be
+consistent here, unless this does violate some journal policy,
+which is not the case (see, for example,
+\url{https://peerj.com/articles/cs-80/}).
+\end{solution}
+
+\question The paragraph in lines 103--105 should be moved to the introduction,
+and the footnote from line 104 should be added to that paragraph as a
+full-blown sentence, expanded by all the relevant technical information
+(Python version, OS, \ldots). Given that the end of life for Python 2 is
+2020., a comment on whether all the presented examples work in both Python 2
+and 3 should be included as well. Further, emphasise that wildcard imports,
+``\texttt{import *}'', should almost never be used in programs (see PEP 8, the
+item ``wildcard imports''). The same goes for the \texttt{import} mentioned in lines 484--487.
+\begin{solution}
+We have moved the footnote inline, and have noted that the examples should
+work with Python 2.7, 3.2, 3.3, 3.4, or 3.5, with any operating system that
+supports Python.
+
+We have added a footnote discussing the concerns with \texttt{import *} (see
+reviewer 2, point~\ref{rev2point1}).
+\end{solution}
+
+\question Line 119 should be removed, as it is basically a copy of the previous line.
+\begin{solution}
+Line 119 is the output of line 118, so not showing it would
+be incorrect.
+
+The aim here was simply to show that the input expression remains unevaluated.
+We have added a sentence before the example to note this.
+This particular example was chosen because it shows the basic syntax for
+addition, subtraction, multiplication, division, and exponentiation.
+\end{solution}
+
+\question In line 121 the word ``stored'' should be replaced by ``used as keys''.
+\begin{solution}
+See the next answer.
+\end{solution}
+
+\question What do the authors mean by ``thereby permitting features such as caching'' in line 122? Caching can be done for mutable types as well, just not through hashing.
+\begin{solution}
+This paragraph was replaced by:
+\begin{quote}
+Importantly, SymPy expressions are immutable. This simplifies the design of
+SymPy by allowing expression interning. It also enables expressions to be
+hashed, which is used to implement caching in SymPy.
+\end{quote}
+\end{solution}
+
+\question There is no need to repeat ``(CAS)'' in line 124, as it was already given in line 64.
+\begin{solution}
+That was removed.
+\end{solution}
+
+\question In the same line, the word ``represents'' should be replaced by ``stores''.
+\begin{solution}
+We have done this.
+\end{solution}
+
+\question In line 184, ``symbols are'' should be replaced by ``\texttt{t} is'' (the general rule is already given in line 179).
+\begin{solution}
+We have done this.
+\end{solution}
+
+\question The code in line 210 should be made into its own line (like a displaymath formula), for typesetting reasons and better readability.
+\begin{solution}
+We now use a verbatim environment here.
+\end{solution}
+
+\question The footnote 4 should be moved from line 221 to line 222, right after ``Basic''.
+\label{rev3point16}
+\begin{solution}
+We have made the suggested change.
+\end{solution}
+
+\question The part ``which defines some basic methods for symbolic expression trees'' should be removed from line 222, as it was already given in line 130.
+\begin{solution}
+This part was removed and footnote moved to the mentioned
+text in the section~\ref{P-sec:core}, ``The Core''.
+\end{solution}
+
+\question In line 225, the sentence ``Not all SymPy classes are subclasses of \texttt{Expr}.'' sounds confusing as a reader new to SymPy wouldn't expect, for example, symbols to inherit ``Expr''. It would be better to expand this, for example ``Most of the SymPy classes (including \texttt{Symbol}) are subclasses of \texttt{Expr}, but there are exceptions to this rule''.
+\begin{solution}
+This paragraph now reads:
+\begin{quote}
+  The typical way to create a custom SymPy object is to subclass an existing
+  SymPy class, usually \texttt{Basic}, \texttt{Expr}, or \texttt{Function}. As
+  it was stated before, all SymPy classes used for expression trees should be
+  subclasses of the base class \texttt{Basic}. \texttt{Expr} is the
+  \texttt{Basic} subclass for mathematical objects that can be added and
+  multiplied together. The most commonly seen classes in SymPy are subclasses
+  of \texttt{Expr}, including \texttt{Add}, \texttt{Mul}, and \texttt{Symbol}.
+  Instances of \texttt{Expr} typically represent complex numbers, but may also
+  include other ``rings'', like matrix expressions. Not all SymPy classes are
+  subclasses of \texttt{Expr}. For instance, logic expressions, such as
+  \verb|And(x, y)|, are subclasses of \texttt{Basic} but not of \texttt{Expr}.
+\end{quote}
+\end{solution}
+
+\question The title ``Features'' in line 276 is ambiguous, as a ``feature''
+has no precise meaning in Python (or even software libraries in general). It
+should be replaced by ``Packages and modules'' or a similar more precise
+wording. The same goes for ``feature'' in most other places in the paper (for
+example, the caption of Table 1.\ and line 495). It would be very useful to also include actual names of the packages/modules in Table 1., as well as in any section covering those packages/modules.
+\begin{solution}
+IEEE 829 defines the term feature as ``a distinguishing
+characteristic of a software item (e.g., performance, portability,
+or functionality).''  We believe that this definition fits our needs. Note
+that we have renamed section (now)~\ref{P-sec:features} to ``Overview of Capabilities''.
+
+Table~\ref{P-features-table} was extended to include submodule names.
+\end{solution}
+
+\question The sets support listing is unnaturally split in two by the ``This includes\ldots'' sentence which would fit better in parentheses.
+\begin{solution}
+This suggestion was implemented.
+\end{solution}
+
+\question Line 355, add a sentence explaining that in SymPy \texttt{str == repr}, because in Python \texttt{repr} is used to get an unambiguous valid Python code representation, while the return value of \texttt{str} is meant to be human-readable.
+\begin{solution}
+See the added footnote~\ref{P-note:repr}.
+\end{solution}
+
+\question Lines 359 and 379: what is 2D text representation? It seems that ``2D'' shouldn't be here.
+\begin{solution}
+This sentence was replaced with:
+\begin{quote}
+A two-dimensional (2D) textual representation of the expression can
+be printed with monospace fonts via \verb|pprint|.
+\end{quote}
+We use here the same terminology as in the Mathematica
+online documentation, e.g., the
+\href{https://reference.wolfram.com/language/ref/OutputForm.html}{\texttt{OutputForm}}
+function:
+\begin{quote}
+\texttt{OutputForm[expr]}: prints as a two-dimensional representation of expr using only keyboard characters.
+\end{quote}
+\end{solution}
+
+\question Line 427: every dictionary is a ``dictionary of keys''. This should be a dictionary with coordinate tuples as keys associated with the appropriate values.
+\begin{solution}
+``Dictionary of Keys'' (DOK) refers specifically to a sparse matrix
+representation where entries are stored as \texttt{(row, column)} pairs
+mapping to the elements. See for instance \texttt{scipy.sparse.dok\_sparse}. We
+have fixed the capitalization of ``Dictionary of Keys'' and added the
+abbreviation (DOK), and stated explicitly what is meant by this. We have also
+made a similar note about List of Lists (LIL) earlier in the section.
+\end{solution}
+
+\question Section 4 would benefit from an introduction, and lines 440-- should become a new subsection 4.1. (named ``Float'' or ``Real numbers support'' or similar).
+\begin{solution}
+We have added an introduction and a subsection~\ref{P-sec:floating-point}, ``Floating-Point Numbers''
+(which, for mathematical clarity, we consider to be distinct from ``real
+numbers'').
+\end{solution}
+
+\question I suggest a better example for lines 459--460: a computation of
+$(e^{100} +1) - e^{100}$:
+
+\begin{verbatim}
+   >>> (exp(100)+1).evalf() - exp(100).evalf()
+   0
+   >>> ((exp(100)+1) - exp(100)).evalf()
+   1.00000000000000
+   >>> (exp(100)+1) - exp(100)
+   1
+\end{verbatim}
+
+or two different ways to compute the 100th Fibonacci number:
+
+\begin{verbatim}
+   >>> phi = (1+sqrt(5))/2
+   >>> psi = (1-sqrt(5))/2
+   >>> ((phi**100-psi**100)/sqrt(5)).evalf()-fibonacci(100)
+   65536.0000000000
+   >>> ((phi**100-psi**100)/sqrt(5) - fibonacci(100)).evalf()
+   0.e-104
+\end{verbatim}
+
+Obviously, like your own example, these are problematic because a part of the computation is relying on Python's builtin floats. Please include a comment on whether symbolic computation (i.e., applying \texttt{evalf()} on the whole expression) always avoids these errors or not, possibly with an example when it doesn't resolve this problem.
+\begin{solution}
+  Your first example, unfortunately, doesn't work due to automatic
+  simplification (see the last input line above:  \texttt{exp(100)} cancels
+  automatically, before any numeric evaluation happens). Your second example
+  doesn't have this issue, but our example is simpler.
+
+Numerical evaluation of the whole expression should
+always solve cancellation problem, as it was stated in the sentence
+``Applying the evalf method to the whole expression solves this problem.''
+\end{solution}
+
+\question The footnote from line 477 should be moved as a sentence in its own right to the introduction, with other technical specifications.
+\begin{solution}
+The mpmath version is now mentioned in the introduction.
+\end{solution}
+
+\question In line 495, the word ``solving'' seems more appropriate than ``solutions''.
+\begin{solution}
+This was replaced with ``solving ODEs''.
+\end{solution}
+
+\question In line 504 ``is'' should be used instead of ``are'' (because ``array'' is singular).
+\begin{solution}
+This was fixed.
+\end{solution}
+
+\question In line 518, ``produces'' should become plural.
+\begin{solution}
+This was fixed.
+\end{solution}
+
+\question The title of section 5, ``Domain specific submodules'', seems inappropriate because the section only covers Physics package (not ``submodules''). It should either be expanded with a short introduction listing other domain specific packages, or it should be renamed to ``Physics package''.
+\begin{solution}
+\label{rev3point30}
+This section (section~\ref{P-sec:domain_specific}) was renamed to ``Physics submodule''.  (See also the
+discussion at~\ref{rev3point37} about module vs package).
+\end{solution}
+
+\question The word ``symbolics'' in line 528 should be removed (as almost everything in the paper deals with symbolic computation).
+\begin{solution}
+We have done this.
+\end{solution}
+
+\question In line 530, sympy.physics.vector is a module, not a package.
+\begin{solution}
+The word ``package'' replaced with ``submodule'' (see also point~\ref{rev3point37}).
+\end{solution}
+
+\question It is unclear what ``both of these objects'' refer to in line 532. My guess is vectors and dyadic objects, but this should be reworded to make it more clear.
+\begin{solution}
+We have changed ``both of these objects can be written\ldots'' to ``the vector
+and dyadic objects both can be written\ldots''.
+\end{solution}
+
+\question In lines 543 and 545, ``rad'' should be removed. Radians are assumed when no other measure (like degrees) is given.
+\begin{solution}
+These units were removed.
+\end{solution}
+
+\question In lines 567--568, ``performing symbolic quantum mechanics'' makes no sense. This should probably be ``computations'', ``solving problems related to'', etc.
+\begin{solution}
+This was reworded to:
+\begin{quote}
+to solve problems in quantum mechanics
+\end{quote}
+\end{solution}
+
+\question The sentence ``SymPy expressions are immutable trees of Python objects.'' doesn't belong in the conclusion. This can be moved to the appropriate place when discussing SymPy's architecture.
+\begin{solution}
+This paper focuses on the architecture of SymPy, and we consider this to be a
+core feature of SymPy's architecture, hence, it's inclusion in the conclusion.
+We have also discussed the different points in this sentence in depth in the architecture section.
+\end{solution}
+
+\question All ``submodules'' should be replaced by ``modules'' (examples:
+lines 657, 662).
+\label{rev3point37}
+\begin{solution}
+  Our use of ``modules'', ``submodules'', and ``packages'' coincides with the
+  definitions used in the official Python documentation (see
+  \url{https://docs.python.org/3/tutorial/modules.html#packages} and
+  \url{https://docs.python.org/3/glossary.html#term-package}). To clarify
+  things, we have modified the manuscript to use ``package'' only when
+  referring to a library external to SymPy (such as mpmath and Xy-pic).
+
+To avoid confusion, and to be consistent with the definitions used by the
+official Python documentation, we have modified the manuscript to use
+``submodule'' to refer to any module that is a dotted submodule of
+\texttt{sympy}, such as \texttt{sympy.physics.quantum}. This is to emphasize
+that these submodules all live within the \texttt{sympy} namespace, as ``module''
+can suggest a separate library.
+\end{solution}
+
+\question The sentences in lines 657--661 should swap places, because ``areas of mathematics'' are discrete mathematics, concrete mathematics, etc., while simplifying expressions, performing common calculus operations, pretty printing expressions, etc.\ belongs to common operations (``other areas'' is also fine, albeit slightly wrong).
+\begin{solution}
+The ``areas of mathematics'' was intended to encompass all mathematical
+operations. We have rewritten the first sentence as
+\begin{quote}
+SymPy supports a wide array of mathematical facilities.
+\end{quote}
+We have also changed ``other included areas'' to ``other supported facilities'' in the third sentence.
+
+The order of the subsequent sentences was chosen to match the order they were
+presented in the paper. We have modified them to match the current ordering in
+the paper.
+\end{solution}
+
+\question In line 662 ``classical mechanics and quantum mechanics'' are listed as the only example of the support for specific domains, as in section 5, which leaves the impression that physics the only one. Either more domains should be listed, or it should be reworded to recognize the fact that there are no others.
+\begin{solution}
+  We have changed the text to ``certain specific physics domains''. Also, we
+  list here only two of the above mentioned submodules in
+  \texttt{sympy.physics}, but there are others.
+\end{solution}
+
+\question Lines 670--678 contain explanations what some of the authors' institutions are. It is customary to use acknowledgements to thank people and institutions, while institutions' details should be provided in the authors' footnotes in the documents' head.
+\begin{solution}
+  The institution details were moved to the footnotes in the head of the
+  paper. The acknowledgments section was removed, as per the PeerJ staff
+  requested technical changes (this information is to be listed separately as
+  a funding statement deceleration as part of the submission process).
+\end{solution}
+
+\question The citation [5] in line 691 is missing identification data, probably a URL\@.
+\begin{solution}
+This is fixed now.
+\end{solution}
+
+\question The citation [21] in line 728 should have ``2D'' instead of ``2d''.
+\begin{solution}
+This is fixed.
+\end{solution}
+
+More specific comments and correction suggestions for the supplement follow.
+
+\question The supplement should have an introduction, explaining what is being covered in it in general and in each section.
+\begin{solution}
+We have added an introduction.
+\end{solution}
+
+\question Since the Guntz algorithm is covered in depth, it would be good to
+include how an interested reader can see SymPy's steps of computation:
+
+\begin{verbatim}
+>>> import os
+>>> os.environ['SYMPY_DEBUG'] = 'True'
+>>> from sympy import *
+sympy/external/importtools.py:145: UserWarning: gmpy2 module is not installed
+  warnings.warn("%s module is not installed" % module, UserWarning)
+>>> x = symbols('x')
+>>> limit(sin(x)/x, x, 0)
+DEBUG: parsing of expression [(0, 1, None, None)] with symbol _w
+DEBUG: returned None
+DEBUG: parsing of expression [(_w, 1, None, None)] with symbol _w
+DEBUG: returned ([], [(_w, 1, None, None)], 1, False)
+DEBUG: parsing of expression [(0, 1, None, None)] with symbol _w
+DEBUG: returned None
+DEBUG: parsing of expression [(_w, 1, None, None)] with symbol _w
+DEBUG: returned ([], [(_w, 1, None, None)], 1, False)
+DEBUG: parsing of expression [(_w, 1, None, None)] with symbol _w
+DEBUG: returned ([], [(_w, 1, None, None)], 1, False)
+DEBUG: parsing of expression [(0, 1, None, None)] with symbol _w
+DEBUG: returned None
+DEBUG: parsing of expression [(_w, 1, None, None)] with symbol _w
+DEBUG: returned ([], [(_w, 1, None, None)], 1, False)
+DEBUG: parsing of expression [(0, 1, None, None)] with symbol _w
+DEBUG: returned None
+DEBUG: parsing of expression [(_w, 1, None, None)] with symbol _w
+DEBUG: returned ([], [(_w, 1, None, None)], 1, False)
+DEBUG: parsing of expression [(1, 1, None, None)] with symbol _w
+DEBUG: returned None
+limitinf(x*sin(1/x), x) = 1
++-mrv_leadterm(_p*sin(1/_p), _p) = (1, 0)
+| +-mrv(_p*sin(1/_p), _p) = ({_p: _Dummy_19}, {}, _Dummy_19*sin(1/_Dummy_19))
+| | +-mrv(_p, _p) = ({_p: _Dummy_19}, {}, _Dummy_19)
+| | +-mrv(sin(1/_p), _p) = ({_p: _Dummy_20}, {}, sin(1/_Dummy_20))
+| |   +-mrv(1/_p, _p) = ({_p: _Dummy_20}, {}, 1/_Dummy_20)
+| |     +-mrv(_p, _p) = ({_p: _Dummy_20}, {}, _Dummy_20)
+| +-rewrite(_Dummy_19*sin(1/_Dummy_19), {exp(_p): _Dummy_19}, {}, _p, _w) = (sin(_w)/_w, -_p)
+| | +-sign(_p, _p) = 1
+| | +-limitinf(1, _p) = 1
+| +-calculate_series(sin(_w)/_w, _w) = 1
+|   +-limitinf(_w, _w) = oo
+|   | +-mrv_leadterm(_w, _w) = (1, -1)
+|   | | +-mrv(_w, _w) = ({_w: _Dummy_23}, {}, _Dummy_23)
+|   | | +-rewrite(_Dummy_23, {exp(_w): _Dummy_23}, {}, _w, _w) = (1/_w, -_w)
+|   | | | +-sign(_w, _w) = 1
+|   | | | +-limitinf(1, _w) = 1
+|   | | +-calculate_series(1/_w, _w) = 1/_w
+|   | +-sign(-1, _w) = -1
+|   | +-sign(1, _w) = 1
+|   +-limitinf(_w, _w) = oo
+|   +-limitinf(_w, _w) = oo
++-sign(0, _p) = 0
++-limitinf(1, _p) = 1
+1
+\end{verbatim}
+
+Emphasize that the environment variable \texttt{SYMPY\_DEBUG} must be set before importing SymPy for the first time.
+\begin{solution}
+Footnote~\ref{S-suppnote:gruntz} was added right before the final example from the Gruntz algorithm section.
+\end{solution}
+
+\question In line 183, syntax \texttt{symbols(\textquotesingle{}a:d\textquotesingle{})} is used without being previously defined or explained.
+\begin{solution}
+Now we use \texttt{symbols(\textquotesingle{}a b c d\textquotesingle{})}, like in other places.
+\end{solution}
+
+\question Figure 2 should not be a screenshot, but rather proper code with \LaTeX-rendered results and explanations, as was done in the rest of the paper. A
+ shortened link to SymPy Gamma for the example's expression can be included
+ for the user to try this for themselves.
+\begin{solution}
+We believe this is not a good idea.  This figure is meant to be an archival
+capture, not software subject to being re-rendered. SymPy Gamma currently only
+renders as HTML\@. SymPy Gamma doesn't export output as \LaTeX{} or other external
+formats.
+
+A link to the project site was added to the text ``SymPy Gamma''. The text for
+the figure caption now links to the page that generated it.
+\end{solution}
+
+\end{questions}
+
+\end{document}

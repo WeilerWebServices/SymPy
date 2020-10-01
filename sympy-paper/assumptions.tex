@@ -1,0 +1,83 @@
+The assumptions system allows users to specify that symbols have certain
+common mathematical properties, such as being positive, imaginary, or
+integer. SymPy is careful to never perform simplifications on an expression
+unless the assumptions allow them. For instance, the simplification $\sqrt{t^2}
+= t$ holds if $t$ is nonnegative ($t\ge 0$), but it does not hold for a general
+complex $t$.%
+\footnote{In SymPy, $\sqrt{z}$ is defined on the usual principal branch with
+the branch cut along the negative real axis.}
+
+
+By default, SymPy performs all calculations assuming that symbols are
+complex valued. This assumption makes it easier to treat mathematical problems
+in full generality.
+\begin{verbatim}
+>>> t = Symbol('t')
+>>> sqrt(t**2)
+sqrt(t**2)
+\end{verbatim}
+
+By assuming the most general case, that \texttt{t} is complex by default, SymPy
+avoids performing mathematically invalid operations. However, in many cases
+users will wish to simplify expressions containing terms like $\sqrt{t^2}$.
+
+Assumptions are set on \texttt{Symbol} objects when they are created. For
+instance \texttt{Symbol(\textquotesingle{}t\textquotesingle{}, positive=True)} will create a symbol named
+\texttt{t} that is assumed to be positive.
+\begin{verbatim}
+>>> t = Symbol('t', positive=True)
+>>> sqrt(t**2)
+t
+\end{verbatim}
+
+Some of the common assumptions are
+\texttt{negative}, \texttt{real}, \texttt{nonpositive}, \texttt{integer},
+\texttt{prime} and \texttt{commutative}.\footnote{SymPy assumes that two
+  expressions $A$ and $B$ commute with each other multiplicatively, that is,
+  $A\cdot B=B\cdot A$, unless they both have \texttt{commutative=False}. Many
+  algorithms in SymPy require special consideration to work correctly with
+  noncommutative products.} Assumptions on any SymPy object can be checked with the
+\verb|is_|\texttt{\textit{assumption}} attributes, like \verb|t.is_positive|.
+
+Assumptions are only needed to restrict a domain so that certain
+simplifications can be performed. They are not required to make the domain match
+the input of a function. For instance, one can create the object
+$\sum_{n=0}^m f(n)$ as \verb|Sum(f(n), (n, 0, m))| without setting
+\texttt{integer=True} when creating the Symbol object \texttt{n}.
+
+The assumptions system additionally has deductive capabilities. The
+assumptions use a three-valued logic using the Python built in objects
+\texttt{True}, \texttt{False}, and \texttt{None}. Note that \texttt{False}
+is returned if the SymPy object doesn't or can't have the assumption.
+For example, both \texttt{I.is\_real} and \texttt{I.is\_prime} return
+\texttt{False} for the imaginary unit \texttt{I}.
+
+\texttt{None} represents the ``unknown'' case. This could mean that given
+assumptions do not unambiguously specify the truth of an attribute. For
+instance, \texttt{Symbol(\textquotesingle{}x\textquotesingle{},
+  real=True).is\_positive} will give \texttt{None} because a real symbol might
+be positive or negative. \texttt{None} could also mean that not enough is
+known or implemented to compute the given fact. For instance, \texttt{(pi +
+  E).is\_irrational} gives \texttt{None}---indeed, the rationality of
+$\pi + e$ is an open problem in mathematics~\cite{lang1966introduction}.
+
+Basic implications between the facts are used to deduce assumptions.
+Deductions are made using the Rete
+algorithm~\cite{doorenbos1995production}.\footnote{\label{note:assumptions}For
+  historical reasons, this algorithm is distinct from the \texttt{sympy.logic}
+  submodule, which is discussed in section~\ref{S-suppsec:Logic} of the
+  supplementary material. SymPy also has an experimental assumptions system
+  which stores facts separate from objects, and uses \texttt{sympy.logic} and
+  a SAT solver for deduction. We will not discuss this system here.} For
+instance, the assumptions system knows that being an integer implies being
+rational.
+\begin{verbatim}
+>>> i = Symbol('i', integer=True)
+>>> i.is_rational
+True
+\end{verbatim}
+Furthermore, expressions compute the assumptions on themselves
+based on the assumptions of their arguments. For instance, if \texttt{x} and
+\texttt{y} are both created with \texttt{positive=True}, then
+\texttt{(x + y).is\_positive} will be \texttt{True} (whereas
+\texttt{(x - y).is\_positive} will be \texttt{None}).

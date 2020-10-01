@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}
+Pull Requests
+{% endblock %}
+
+{% block runtime %}
+$(document).ready(function() {
+    $('#table_mergeable').dataTable({
+        "sScrollY": "400px",
+        "bPaginate": false,
+        "aaSorting": [[ 0, "desc" ]]
+    });
+    $('#table_nonmergeable').dataTable({
+        "sScrollY": "400px",
+        "bPaginate": false,
+        "aaSorting": [[ 0, "desc" ]]
+    });
+});
+{% endblock %}
+
+{% block content %}
+<h2>List of Pull Requests</h2>
+<p class="timestamp">Last full update {{ last_update_pretty }} |
+Last quick update {{ last_quick_update_pretty }}</p>
+<p>
+This is a list of all pull requests at GitHub. They update automatically: all
+pull requests are updated every 10 hours (full update), open pull requests are
+updated every 2 hours (quick update). Currently the update frequency is low,
+as we were running over the free quota from the Google Appengine.
+</p>
+
+<h2>Mergeable Pullrequests</h2>
+<p>
+These pull requests apply cleanly over master.
+<table id="table_mergeable" class="display">
+    <thead>
+        <tr>
+            <th>Num</th>
+            <th>Author Name</th>
+            <th>Created at</th>
+            <th>Title</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for p in pullrequests_mergeable %}
+        <tr>
+            <td><a href="/pullrequest/{{ p.num }}/">#{{ p.num }}</a></td>
+            <td>
+            <a href="https://github.com/{{ p.author.login }}">{{ p.author.login }}</a>
+            </td>
+            <td>{{ p.created_at|date:"r" }}</td>
+            <td>{{ p.title }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+.</p>
+
+<h2>Non-Mergeable Pullrequests</h2>
+<p>
+These pull requests have to be rebased first.
+<table id="table_nonmergeable" class="display">
+    <thead>
+        <tr>
+            <th>Num</th>
+            <th>Author Name</th>
+            <th>Created at</th>
+            <th>Title</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for p in pullrequests_nonmergeable %}
+        <tr>
+            <td><a href="/pullrequest/{{ p.num }}/">#{{ p.num }}</a></td>
+            <td>
+            <a href="https://github.com/{{ p.author.login }}">{{ p.author.login }}</a>
+            </td>
+            <td>{{ p.created_at|date:"r" }}</td>
+            <td>{{ p.title }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+.
+</p>
+
+<h2>Closed Pullrequests</h2>
+<p>
+Show <a href="/closed_pullrequests/">closed pull requests</a>.
+</p>
+{% endblock %}

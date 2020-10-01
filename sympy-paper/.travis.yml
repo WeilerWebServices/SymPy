@@ -1,0 +1,33 @@
+sudo: required
+dist: trusty
+before_install:
+- sudo apt-get update && sudo apt-get install -y --no-install-recommends texlive-fonts-recommended
+  texlive-latex-extra texlive-fonts-extra texlive-humanities texlive-science latex-xcolor
+  dvipng texlive-latex-recommended python-pygments lmodern texlive-xetex latexdiff texlive-generic-recommended
+
+# install sympy, numpy and matplotlib for doctesting
+- wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+- bash miniconda.sh -b -p $HOME/miniconda
+- export PATH="$HOME/miniconda/bin:$PATH"
+- hash -r
+- conda config --set always_yes yes --set changeps1 no
+- conda config --add channels conda-forge
+- conda update -q conda
+- conda info -a
+- conda create -q -n test-environment sympy=1.0 numpy matplotlib xonsh
+- source activate test-environment
+
+# for matplotlib
+- "export DISPLAY=:99.0"
+- "sh -e /etc/init.d/xvfb start"
+
+script:
+- make
+- make test
+- make diff
+- sh upload_travis.sh
+notifications:
+  email: false
+env:
+  global:
+    secure: "V61rKiNGYdR8n1KYQBV7/7zhdk5lCKyiTc0KfB2NqDni8wRIWQ4EkIkKLU+cxOC1XLNxa0zc7WgIhkFaP5aYEKiE66McpsCOPDuoWxt9OJEheoBuJ3iuooAxpoEdYtzKBNSd6Tn2NRm1gW1h13pHfB0ShdDoZyXo2n8REIY3ErRN3uRgu5ce4UM04DcmE3tH7ydlFPLUUSL6m1Bl7q2UscVDmwxBzfORMw1m6WQ6U+ItXbX1pXQ8ucOqM8OdO6HjhF5F3cKqchx+nere3X8weCREKLm4O6UZ+KDCBkbFBJpAzwrB6q1TQaFjcSano69RXPxziNimeb3or4sw5pIVP+W+0sgaUg0fvTNGZIOmxAkv+oEs2X1DYBeArFKrc746Z2rTNY/QkGFjku2TK0dMZSLWNKejEGBierWlJj+sDq/wQeuizOIFjPdxD9FuE7vgIcp5WWmom9YAhhpiH4/+NF0ZXqAwg4Lp7kUysmsKpTa89l/3/D1TV4L75I03OKLt3Zv1g2G8x40XjxpHh4W/MxIWdUGMFTm5CA9ssjhR7BvEV3NfnsBMOwIe/8984vS1JCTuFKW+2sC1COJYn+12uPeQ7l0tjoHW3x1e+9C+IaBvo+2ojVL6Qj+BAk2RN5xWrmQiX8Y9rhVFtlw3xekk5goZrHdYEXZ7hsTQ4NM5sxA="

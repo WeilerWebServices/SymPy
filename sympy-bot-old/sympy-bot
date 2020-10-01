@@ -1,0 +1,850 @@
+#! /usr/bin/env python
+
+from __future__ import division
+
+import codecs
+import shutil
+import stat
+import sys
+import os
+import ConfigParser
+import re
+import math
+
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, ArgumentTypeError
+from tempfile import mkdtemp
+
+from utils.cmd import (cmd, get_interpreter_version_info, get_platform_version,
+        get_sphinx_version, CmdException)
+from utils.github import (github_add_comment_to_pull_request,
+        github_authenticate, github_get_pull_request, github_get_user_info,
+        github_get_user_repos, github_list_pull_requests)
+from utils.reviews import reviews_sympy_org_upload
+from utils.testrunner import run_tests, get_hashes, merge_branch, fetch_branch
+from utils.url_templates import URLs
+
+default_testcommand = "setup.py test"
+default_build_docs_command = "make clean; make html-errors"
+default_interpreter = ["python"]
+default_interpreter3 = ["python3"]
+default_protocol = "https"
+doc_coverage_command = "./bin/coverage_doctest.py --no-colors -v"
+default_section = "DEFAULT"
+
+def main():
+    global default_interpreter
+    global default_interpreter3
+
+    # Subclass argparser so help message is displayed when no args passed
+    class BotArgumentParser(ArgumentParser):
+        def error(self, message):
+            if message == "too few arguments":
+                self.print_help(sys.stderr)
+            else:
+                self.print_usage(sys.stderr)
+            self.exit(2, '%s: error: %s\n' % (self.prog, message))
+
+    parser = BotArgumentParser(
+            epilog="For the full help on the  review and list commands, run "
+            "'sympy-bot command -h'.",
+            formatter_class=ArgumentDefaultsHelpFormatter)
+    subparsers = parser.add_subparsers(title="command", dest="command")
+
+    parser_review = subparsers.add_parser("review",
+        description="Reviews specified pull requests.",
+        help="Reviews pull requests",
+        formatter_class=ArgumentDefaultsHelpFormatter)
+    parser_review.add_argument("n", nargs="+",
+        help="Numbers of pull requests to review. You can also specify 'all' "
+        "or 'mergeable' pull requests.")
+    parser_review.add_argument("--profile", type=str, default=default_section,
+        help="Configuration file profile to use, see README for information "
+        "about setting up profiles")
+    parser_review.add_argument("-n", "--no-upload", action="store_true",
+        help="Do not upload the review to the server")
+    parser_review.add_argument("-2", "--python2", nargs="?", const=True,
+        default=None, help="Run the tests with the interpreters specified "
+        "by the `interpreter` option, this is the default behavior, but it "
+        "must be called explicitly to run these interpreters when Python 3 "
+        "tests are run or the docs are built")
+    parser_review.add_argument("-3", "--python3", nargs="?", const=True,
+        default=False, help="Run the tests with the interpreters specified "
+        "by the `interpreter3` configuration file option, which is `python3` "
+        "by default")
+    parser_review.add_argument("-D", "--build-docs", nargs="?", const=True,
+        default=False, help="Test the building of the Sphinx HTML "
+        "documentation")
+    parser_review.add_argument("--doc-coverage", nargs="?", const=True,
+        default=False, help="""Run the bin/coverage_doctest.py script, and
+        report the results. Implies --build-docs.""")
+    parser_review.add_argument("--no-comment", dest="comment",
+        action="store_false", help="Upload review but do not submit summary "
+        "comment to pull request on GitHub")
+    parser_review.add_argument("-i", "--interpreter", action="append",
+        type=str, default=default_interpreter, help="Python interpreter used "
+        "to run tests")
+    parser_review.add_argument("--interpreter3", action="append", type=str,
+        default=default_interpreter3, help="Python 3 interpreter used to run "
+        "tests")
+    parser_review.add_argument("-t", "--testcommand", type=str,
+        default=default_testcommand, metavar="COMMAND", help="Command, run as "
+        "an argument of `python`, used to execute tests, allowing the use of "
+        "sympy-bot on a subset of the tests, to run a command that is not an "
+        "argument of `python`, add '-V;' to the beginning of the option, for "
+        "example '-V; mycommand'")
+    parser_review.add_argument("--build-docs-command", type=str,
+        default=default_build_docs_command, metavar="COMMAND", help="Command run to "
+        "build the Sphinx docs")
+    parser_review.add_argument("--build-docs-dir", type=str, default="doc",
+        metavar="DIR", help="Directory in which to build the Sphinx docs")
+    parser_review.add_argument("-r", "--reference", type=str, help="Path to "
+        "sympy repository, passed to 'git clone <sympy repo>', setting this "
+        "speeds up sympy-bot and decreases network traffic")
+    parser_review.add_argument("--user", type=str, help="Username used for "
+        "GitHub authentication")
+    parser_review.add_argument("--token", type=str, help="GitHub API token "
+        "used for authentication")
+    parser_review.add_argument("--token-file", type=str, help="File "
+        "containing GitHub API token used for authentication")
+    parser_review.add_argument("-m", "--merge-commit", type=str,
+        default=None, metavar="COMMIT", help="Commit to use as "
+        "master for merging, which by default is determined from "
+        "the pull request's target; use 'HEAD' to not merge")
+    parser_review.add_argument("-p", "--protocol", type=str,
+        default=default_protocol, choices=["https", "git"], help="Protocol "
+        "for communicating with GitHub")
+    parser_review.add_argument("-s", "--server", type=str,
+        default="http://sympy-reviews.appspot.com", help="Server to upload results")
+    parser_review.add_argument("-R", "--repository", type=str, default="sympy/sympy",
+        help="GitHub repository used, allowing sympy-bot to be used with "
+        "other projects")
+    parser_list = subparsers.add_parser("list",
+        description="Lists available pull requests",
+        help="Lists available pull requests",
+        formatter_class=ArgumentDefaultsHelpFormatter)
+    parser_list.add_argument("-n", "--numbers", action="store_true",
+        help="List only the numbers of open pull requests")
+    parser_list.add_argument("--profile", type=str, default=default_section,
+        help="Configuration file profile to use, see README for information "
+        "about setting up profiles")
+    parser_list.add_argument("-R", "--repository", type=str, default="sympy/sympy",
+        help="GitHub repository used, allowing sympy-bot to be used with "
+        "other projects")
+
+    boolargs = {"build_docs", "no_comment", "comment", "no_upload", "python2",
+        "python3", "doc_coverage",}
+    # Initial parse to print help
+    options = parser.parse_args()
+    # Load configuration and set defaults from it
+    config = load_config_file(options.profile)
+    # Parse args that should be booleans, but come as strings from ConfigParser
+    for i in boolargs:
+        if i in config and isinstance(config[i], str):
+            val = config[i].strip()
+            if val.lower() in {"true", "y", "yes"}:
+                config[i] = True
+            elif val.lower() in {"false", "n", "no"}:
+                config[i] = False
+            else:
+                raise ConfigParser.Error("Unable to parse boolean configuration value for %s: %s" % (i, val))
+    # If interpreter/interpreter3 is set in config file, use them as the default
+    parser.set_defaults(interpreter=None)
+    parser.set_defaults(interpreter3=None)
+    if "interpreter" in config:
+        interp = config["interpreter"]
+        if interp.strip().lower() == "none":
+            config["interpreter"] = []
+        else:
+            config["interpreter"] = [i.strip() for i in interp.split(",")]
+    if "interpreter3" in config:
+        interp = config.pop("interpreter3")
+        if interp.strip().lower() == "none":
+            config["interpreter3"] = []
+        else:
+            config["interpreter3"] = [i.strip() for i in interp.split(",")]
+    parser.set_defaults(**config)
+    # Parse args
+    options = parser.parse_args()
+
+    gh_user, gh_repo = options.repository.split("/")
+    urls = URLs(user=gh_user, repo=gh_repo)
+
+    if options.command == "list":
+        github_list_pull_requests(urls, numbers_only=options.numbers)
+    elif options.command == "review":
+        if options.doc_coverage:
+            options.build_docs = True
+
+        # Set bool args
+        for i in boolargs:
+            val = getattr(options, i, None)
+            if isinstance(val, str):
+                val = val.strip().lower()
+                if val in {"true", "y", "yes"}:
+                    setattr(options, i, True)
+                elif val in {"false", "n", "no"}:
+                    setattr(options, i, False)
+                else:
+                    raise ArgumentTypeError("Unable to parse boolean configuration value for %s: %s" % (i, val))
+
+        # No interpreter/interpreter3 set
+        if options.interpreter is None:
+            options.interpreter = default_interpreter
+        if options.interpreter3 is None:
+            options.interpreter3 = default_interpreter3
+        # Nothing specified, then use default
+        if options.python2 is None and not options.python3 and not options.build_docs:
+            interpreter = options.interpreter
+        else:
+            interpreter = []
+        # Command line `-2`/config file `python2`
+        if options.python2:
+            interpreter += options.interpreter
+        # Command line `-3`/config file `python3`
+        if options.python3:
+            interpreter += options.interpreter3
+
+        options.interpreter = interpreter
+
+        if "mergable" in options.n or "mergeable" in options.n:
+            print "> Reviewing all *mergeable* pull requests"
+            print
+            nonmergeable, mergeable = github_list_pull_requests(urls, numbers_only=True)
+            options.n = mergeable
+        elif "all" in options.n:
+            print "> Reviewing *all* pull requests"
+            print
+            nonmergeable, mergeable = github_list_pull_requests(urls, numbers_only=True)
+            options.n = nonmergeable + mergeable
+        else:
+            # list of pull request numbers, convert it:
+            options.n = map(int, options.n)
+
+        if not options.no_upload and options.comment:
+            if not options.token and options.token_file:
+                options.token = load_token_file(options.token_file)
+            username, password, token = github_authenticate(urls, options.user, options.token)
+        else:
+            username = password = token = None
+
+        if password and token:
+            save_token = raw_input("> Save token to file? [Y/n] ")
+            if save_token.lower() in ["y", "ye", "yes", ""]:
+                token_file = save_token_file(token)
+            else:
+                token_file = None
+
+            if config:
+                print "> WARNING: Automatically updating config file will overwrite comments"
+                print "> Otherwise you can manually add the following to your config file:"
+                if token_file:
+                    print "token_file = %s" % token_file
+                else:
+                    print "token = %s" % token
+                create_config = raw_input("> Automatically update config file? [Y/n] ")
+            else:
+                create_config = raw_input("> Create config file? [Y/n] ")
+
+            if create_config.lower() in ["y", "ye", "yes", ""]:
+                save_config_file(username, token, token_file)
+
+        try:
+            dispatch_reviews(options, urls, username=username, password=password, token=token)
+        except KeyboardInterrupt:
+            print "\n> Quitting on signal SIGINT."
+            sys.exit(1)
+
+def load_config_file(profile):
+    conf_file = os.path.normpath('~/.sympy/sympy-bot.conf')
+    conf_file = os.path.expanduser(conf_file)
+
+    parser = ConfigParser.SafeConfigParser()
+
+    if os.path.exists(conf_file):
+        print "> Using config file %s" % conf_file
+        with open(conf_file) as f:
+            try:
+                parser.readfp(f)
+            except IOError as e:
+                print "> WARNING: Unable to open config file:", e
+            except ConfigParser.Error as e:
+                print "> WARNING: Unable to parse config file:", e
+            else:
+                print "> Loaded configuration file"
+
+                # Try to get default items, as the following will not be true:
+                # parser.has_section("DEFAULT")
+                try:
+                    default_items = dict(parser.items(default_section, raw=True))
+                except ConfigParser.NoSectionError:
+                    default_items = {}
+
+                if profile.upper() == default_section:
+                    items = default_items
+                elif parser.has_section(profile):
+                    items = dict(parser.items(profile, vars=default_items))
+                else:
+                    raise ConfigParser.Error("Configuration file does not contain profile: %s" % profile)
+
+                return items
+    return {}
+
+def save_config_file(username, token, token_file):
+    filename = "~/.sympy/sympy-bot.conf"
+    filename = os.path.expanduser(filename)
+    filename = os.path.abspath(filename)
+
+    folder, _ = os.path.split(filename)
+
+    parser = ConfigParser.SafeConfigParser()
+    if os.path.isfile(filename):
+        try:
+            with open(filename, 'r') as f:
+                parser.readfp(f)
+        except IOError as e:
+            print "> Unable to open current config file: ", e
+            return
+
+    parser.set(default_section.upper(), 'user', username)
+
+    if token_file:
+        parser.set(default_section.upper(), "token_file", token_file)
+    elif token:
+        parser.set(default_section.upper(), "token", token)
+
+    try:
+        if not os.path.isdir(folder):
+            os.mkdir(folder)
+        with open(filename, 'w') as f:
+            parser.write(f)
+    except OSError:
+        print "> Unable to create folder for configuration file"
+        return
+    except IOError:
+        print "> Unable to save configuration file"
+        return
+    print "> Configuration file saved"
+
+def load_token_file(path):
+    print "> Using token file %s" % path
+
+    path = os.path.expanduser(path)
+    path = os.path.abspath(path)
+
+    if os.path.isfile(path):
+        try:
+            with open(path) as f:
+                token = f.readline()
+        except IOError:
+            print "> Unable to read token file"
+            return
+    else:
+        print "> Token file does not exist"
+        return
+
+    return token.strip()
+
+
+def save_token_file(token):
+    token_file = raw_input("> Enter token file location [~/.sympy/token] ")
+    token_file = token_file or "~/.sympy/token"
+
+    token_file_expand = os.path.expanduser(token_file)
+    token_file_expand = os.path.abspath(token_file_expand)
+    token_folder, _ = os.path.split(token_file_expand)
+
+    try:
+        if not os.path.isdir(token_folder):
+            os.mkdir(token_folder, 0o700)
+        with open(token_file_expand, 'w') as f:
+            f.write(token + '\n')
+        os.chmod(token_file_expand, stat.S_IREAD | stat.S_IWRITE)
+    except OSError as e:
+        print "> Unable to create folder for token file: ", e
+        return
+    except IOError as e:
+        print "> Unable to save token file: ", e
+        return
+
+    return token_file
+
+def dispatch_reviews(config, urls, **kwargs):
+    username = kwargs.get("username", None)
+    password = kwargs.get("password", None)
+    token = kwargs.get("token", None)
+
+    pr_numbers = config.n
+    interpreters = config.interpreter
+    python3 = {i: get_interpreter_version_info(i)[0] == '3' for i in interpreters}
+
+    tmpdir = mkdtemp(prefix="sympy-bot-tmp")
+    repo_path = os.path.join(tmpdir, "sympy")
+    print "> Working directory: %s" % tmpdir
+
+    print "> Cloning %s master" % config.repository
+    if config.reference:
+        reference = os.path.abspath(os.path.expanduser(os.path.expandvars(config.reference)))
+        cmd("git clone --reference %s git://github.com/%s.git" % (reference, config.repository),
+                cwd=tmpdir)
+    else:
+        cmd("git clone git://github.com/%s.git" % config.repository,
+                cwd=tmpdir)
+
+    # Generate all reviews
+    log_dir_base = os.path.join(tmpdir, "out")
+    os.mkdir(log_dir_base)
+    reviews = {}
+    master_hashes = {}
+    branch_hashes = {}
+    users = {}
+    branches = {}
+
+    for n in pr_numbers:
+        if len(pr_numbers) == 1:
+            log_dir = log_dir_base
+        else:
+            log_dir = os.path.join(log_dir_base, "pr-%s" % n)
+            os.mkdir(log_dir)
+
+        # Write pull request info
+        pull = github_get_pull_request(urls, n)
+        if not pull:
+            # Pull request is really an issue
+            continue
+        assert pull["number"] == n
+        print "> Reviewing pull request #%d" % n
+        merge_commit = config.merge_commit or "origin/" + pull["base"]["ref"]
+        branch = pull["head"]["ref"]
+        user = pull["head"]["user"].get("login")
+        user_info = github_get_user_info(urls, user)
+        author = "\"%s\" <%s>" % (user_info.get("name", "unknown"),
+                                  user_info.get("email", ""))
+
+        repo_dict = pull["head"]["repo"]
+        if repo_dict is None:
+            # This might happen if a user sends a PR from his master branch.
+            # In this case we search the user's repos for a matching repo.
+            user_repos = github_get_user_repos(urls, user)
+            for repo in user_repos:
+                if repo["name"] == pull["base"]["repo"]["name"]:
+                    repo_dict = repo
+                    break
+        repo_url = repo_dict["html_url"]
+        repo_url = repo_url.replace(default_protocol, config.protocol)
+
+        fetchinfo = fetch_branch(repo_url, branch, repo_path, n)
+        if fetchinfo:
+            mergeinfo = {"result": fetchinfo, "log": ""}
+            # This shouldn't be used anyway
+            hashinfo = {"master_hash": "", "branch_hash": ""}
+        else:
+            # XXX: This has to go before merge_branch, or else it will return
+            # the merged commit SHA1 instead of the branch SHA1.
+            hashinfo = get_hashes(repo_path, merge_commit, n)
+            if not hashinfo:
+                print "> There was an error. Report not uploaded."
+                sys.exit(1)
+            mergeinfo = merge_branch(repo_path, merge_commit)
+
+        branch_hashes[n] = hashinfo['branch_hash']
+        master_hashes[n] = hashinfo['master_hash']
+        users[n] = user
+        branches[n] = branch
+
+        print "> Pull request info:"
+        print unicode(">     Author: %s" % author).encode('utf8')
+        print ">     Repository: %s" % repo_url
+        print ">     Branch: %s" % branch
+
+        del pull
+        del hashinfo
+
+        pull_review = {}
+
+        run2to3 = True
+
+        if mergeinfo["result"] == "fetch":
+            print "> Could not fetch the branch!"
+            pull_review["fetch"] = {
+                "result": mergeinfo["result"],
+                "url": "(report was not uploaded)",
+            }
+        if mergeinfo["result"] == "conflicts":
+            print "> There were merge conflicts!"
+            log_file = os.path.join(log_dir, "merge-conflicts")
+            with codecs.open(log_file, "w", encoding="utf8") as log:
+                log.write(mergeinfo["log"])
+            print "> Merge conflicts logged to %s" % log_file
+
+            if not config.no_upload:
+                print "> Uploading merge conflicts report"
+                url_base = config.server
+                data = {
+                    "num": n,
+                    "result": mergeinfo["result"],
+                    "interpreter": "",
+                    "log": mergeinfo["log"],
+                    "testcommand": "git merge %s" % merge_commit,
+                }
+                report_url = reviews_sympy_org_upload(data, url_base)
+                print "> Uploaded report at: %s" % report_url
+            else:
+                report_url = "(report was not uploaded)"
+
+            pull_review["conflicts"] = {
+                "result": mergeinfo["result"],
+                "url": report_url,
+            }
+        elif mergeinfo["result"] == "":
+            # Iterate over interpreters
+            for log_num, i in enumerate(interpreters):
+                # Run tests
+                print "> Testing interpreter %s" % i
+                command = "%s %s" % (i, config.testcommand)
+                result = run_tests(repo_url, branch, repo_path, command,
+                    merge_commit)
+                if result["result"] == "error":
+                    print "> There was an error. Report not uploaded."
+                    sys.exit(1)
+                print "> Done."
+
+                # Log results
+                log_file = os.path.join(log_dir, "interpreter-%s" % log_num)
+                with codecs.open(log_file, "w", encoding="utf8") as log:
+                    log.write(result["log"])
+                print "> Results logged to %s" % log_file
+
+                # Upload results
+                if not config.no_upload:
+                    print "> Uploading test results"
+                    url_base = config.server
+                    data = {
+                        "num" : n,
+                        "result" : result["result"],
+                        "interpreter": i,
+                        "log": result["log"],
+                        "testcommand": config.testcommand,
+                    }
+                    report_url = reviews_sympy_org_upload(data, url_base)
+                    print "> Uploaded report for '%s' at: %s" % (i, report_url)
+                else:
+                    report_url = "(report was not uploaded)"
+
+                pull_review[i] = {
+                    "result" : result["result"],
+                    "url" : report_url,
+                }
+                del result
+                print
+
+            if config.build_docs:
+                # Run tests
+                print "> Building Sphinx docs"
+                if get_sphinx_version() is None:
+                    print "> WARNING: Cannot find sphinx, disabling building HTML docs"
+                    if interpreters == []:
+                        print "> No tests to run, exiting"
+                        exit()
+                else:
+                    docs_repo_path = os.path.join(tmpdir, "sympy", config.build_docs_dir)
+                    result = run_tests(repo_url, branch, docs_repo_path,
+                        config.build_docs_command, merge_commit)
+                    if result["result"] == "error":
+                        print "> There was an error. Report not uploaded."
+                        sys.exit(1)
+                    print "> Done."
+
+                # Log results
+                log_file = os.path.join(log_dir, "docs")
+                with codecs.open(log_file, "w", encoding="utf8") as log:
+                    log.write(result["log"])
+                print "> Results logged to %s" % log_file
+
+                if config.doc_coverage:
+                    if not result["result"] == "Passed":
+                        print "> Docs did not build correctly. Skipping coverage."
+                    else:
+                        # Run doc coverage script
+                        print "> Running bin/coverage_doctest.py"
+                        # TODO: Should we pass -v to coverage_doctest.py?
+                        doc_coverage_result = run_tests(repo_url, branch,
+                            repo_path, doc_coverage_command, merge_commit)
+                        if doc_coverage_result["result"] == "error":
+                            print "> There was an error. Report not uploaded."
+                            sys.exit(1)
+
+                        # Run against master (actually, merge_commit) for a comparison
+                        try:
+                            cmd("git checkout %s" % merge_commit, echo=True,
+                                cwd=repo_path)
+                        except CmdException:
+                            print "> Could not checkout %s" % merge_commit
+                            sys.exit(1)
+
+                        # Rebuild the docs. A full rebuild should not be necessary
+                        run_tests(repo_url, branch, docs_repo_path,
+                            "make html-errors", merge_commit)
+
+                        master_doc_coverage_result = run_tests(repo_url,
+                            branch, repo_path, doc_coverage_command, merge_commit)
+                        if master_doc_coverage_result["result"] == "error":
+                            print "> There was an error. Report not uploaded."
+                            sys.exit(1)
+
+                        print "> Done."
+
+                # Upload results
+                if not config.no_upload:
+                    print "> Uploading doc build"
+                    url_base = config.server
+                    data = {
+                        "num" : n,
+                        "result" : result["result"],
+                        "interpreter": "None",
+                        "log": result["log"],
+                        "testcommand": config.build_docs_command,
+                    }
+                    report_url = reviews_sympy_org_upload(data, url_base)
+                    print "> Uploaded report for building docs at: %s" % report_url
+
+                    if config.doc_coverage and result["result"] == "Passed":
+                        print "> Uploading doc coverage"
+                        data["result"] = doc_coverage_result["result"]
+                        data["log"] = (doc_coverage_result["log"] + '\nMaster Doctest Coverage\n\n'
+                            + master_doc_coverage_result["log"])
+                        doc_coverage_report_url = reviews_sympy_org_upload(data, url_base)
+                        print "> Uploaded report for building docs at: %s" % doc_coverage_report_url
+                else:
+                    report_url = "(report was not uploaded)"
+                    doc_coverage_report_url = "(report was not uploaded)"
+
+                pull_review["build_docs"] = {
+                    "result" : result["result"],
+                    "url" : report_url,
+                }
+                if config.doc_coverage and result["result"] == "Passed":
+                    pull_review["doc_coverage"] = {
+                        "result": doc_coverage_result["result"],
+                        "url": doc_coverage_report_url,
+                        "log": doc_coverage_result["log"],
+                        "master_log": master_doc_coverage_result["log"]
+                        }
+
+                del result
+                print
+
+        reviews[n] = pull_review
+        print "> View logs for PR %d in: %s" % (n, log_dir_base)
+
+        # Summarize and comment
+        report_url = {i: result["url"] for i, result in pull_review.iteritems()}
+        report_status = {i: result["result"] for i, result in pull_review.iteritems()}
+        master_hash = master_hashes[n]
+        branch_hash = branch_hashes[n]
+
+        # Generate summary
+        review = formulate_review(report_status, report_url, master_hash,
+            branch_hash, config.interpreter, config.testcommand,
+            config.build_docs, config.build_docs_command, users[n],
+            branches[n], merge_commit,
+            doc_coverage_log=reviews[n].get('doc_coverage', {}).get('log',
+                None), master_doc_coverage_log=reviews[n].get('doc_coverage',
+                    {}).get('master_log', None))
+
+        print "> Review:"
+        print
+        print review
+        print
+
+        # Comment to GitHub
+        if not config.no_upload and config.comment:
+            print "> Uploading the review to the GitHub pull request ..."
+            github_add_comment_to_pull_request(urls, username, password, token,
+                    n, review)
+            print ">     Done."
+            print "> Check the results: https://github.com/%s/pull/%d" % (config.repository, n)
+
+def formulate_review(report_status, report_url, master_hash, branch_hash,
+                     interpreter, testcommand, build_docs, build_docs_command,
+                     user, branch_name, merge_commit, doc_coverage_log=None,
+                     master_doc_coverage_log=None):
+    if user:
+        atuser = "@"+user+": "
+        branch_name = user + '/' + branch_name
+    else:
+        atuser = ""
+
+    if merge_commit == 'origin/master':
+        master_name = 'master'
+    else:
+        master_name = "**" + merge_commit + "**"
+
+    formatdict = {'branch_hash': branch_hash, 'master_hash': master_hash,
+                  'atuser': atuser, 'master_name': master_name, 'branch_name':
+                  branch_name, 'master_name': master_name}
+
+    if any([status == "conflicts" for status in report_status.itervalues()]):
+        formatdict["report_url"] = report_url["conflicts"]
+        summary = """:exclamation: There were [merge conflicts]({report_url}) (could not \
+merge {branch_name} ({branch_hash}) into {master_name} ({master_hash})); could \
+not test the branch.
+{atuser}Please merge your branch with master.  \
+See the report for a list of the merge conflicts."""
+    elif any([status == "fetch" for status in report_status.itervalues()]):
+        summary = """:x: Could not fetch the branch {branch_name}.
+{atuser}Please make sure that {branch_name} has been pushed to GitHub and run the \
+sympy-bot tests again."""
+    # XXX: When we get full doctest coverage, remove special case of
+    # doc_coverage below.
+    elif any([status == "Failed" and test != "doc_coverage" for (test, status) in report_status.iteritems()]):
+        summary = """:red_circle: Failed after merging \
+{branch_name} ({branch_hash}) into {master_name} ({master_hash}).
+{atuser}Please fix the test failures."""
+    elif all([status == "Passed" or test == "doc_coverage" for (test, status) in report_status.iteritems()]):
+        summary = """:white_check_mark: Passed after merging \
+{branch_name} ({branch_hash}) into {master_name} ({master_hash})."""
+    else:
+        raise ValueError("Unknown report_status")
+
+
+    report = """**[SymPy Bot][sympy-bot] Summary**: %s\n""" % summary
+
+    for n, i in enumerate(interpreter, start=1):
+        if i not in report_status.keys():
+            continue
+        status = report_status[i]
+        summary = get_summary(status, report_url[i])
+
+        details = get_platform_version(i)
+        if testcommand != default_testcommand:
+            details['additional_info'] += "\n*Test command:* **%s**" % testcommand
+        if details['use_cache'] != 'yes':
+            details['additional_info'] += "\n*Cache:* **%s**" % details['use_cache']
+
+        details['summary'] = summary
+        details['status'] = status
+        details['symbol'] = status_symbols[status]
+        report += "{symbol} **{python_type} {python_version}**: {summary}{additional_info}\n".format(**details)
+
+    if build_docs and "build_docs" in report_status.keys():
+        details = get_sphinx_version()
+        details['status'] = report_status["build_docs"]
+        details['symbol'] = status_symbols[details['status']]
+        details['summary'] = get_summary(details['status'], report_url['build_docs'])
+
+        if build_docs_command != default_build_docs_command:
+            details['additional_info'] += "\n*Docs build command:* **%s**" % build_docs_command
+
+        report += "{symbol} **Sphinx {sphinx_version}**: {summary}{additional_info}\n".format(**details)
+
+    if "doc_coverage" in report_status.keys():
+        details = {}
+        details['status'] = report_status["doc_coverage"]
+        details['symbol'], details['summary'] = get_doc_coverage_summary(details['status'],
+            report_url['doc_coverage'], doc_coverage_log,
+            master_doc_coverage_log, master_name)
+
+        report += "{symbol} **Doc Coverage**: {summary}\n".format(**details)
+
+    report += '''\n[sympy-bot]: https://github.com/sympy/sympy-bot "The \
+SymPy-Bot GitHub page."'''
+    return report.format(**formatdict)
+
+status_symbols = {
+    "conflicts": ":exclamation:",
+    "fetch": ":x:",
+    "Failed": ":red_circle:",
+    "Passed": ":white_check_mark:",
+}
+
+def get_summary(status, report_url):
+    if status == "conflicts":
+        summary = "There were [merge conflicts]({report_url}); could not test the branch."
+    elif status == "fetch":
+        summary = "Could not [fetch the branch]({report_url})."
+    elif status == "Failed":
+        summary = "[fail]({report_url})"
+    elif status == "Passed":
+        summary = "[pass]({report_url})"
+    else:
+        raise ValueError("Unknown report_status")
+    return summary.format(report_url=report_url)
+
+def get_doc_coverage_summary(status, report_url, log, master_log, master_name):
+    basic_summary = get_summary(status, report_url)
+    if status not in {"Passed", "Failed"}:
+        return status_symbols[status], basic_summary
+
+    # TODO: Add a flag to coverage_doctest.py to output this data in a way that
+    # is easier to parse
+    doctest_score_re = re.compile(r"TOTAL DOCTEST SCORE for sympy: (\d+)% \((\d+) of (\d+)\)")
+    sphinx_score_re = re.compile(r"TOTAL SPHINX SCORE for sympy: (\d+)% \((\d+) of (\d+)\)")
+    doctest_match = doctest_score_re.search(log)
+    sphinx_match = sphinx_score_re.search(log)
+    master_doctest_match = doctest_score_re.search(master_log)
+    master_sphinx_match = sphinx_score_re.search(master_log)
+    if (not doctest_match or not sphinx_match or not master_doctest_match or
+        not master_sphinx_match):
+
+        return status_symbols['fetch'], "Could not parse output of coverage_doctest.py"
+
+    numbers = {
+        'status': status,
+        'report_url': report_url,
+        'basic_summary': basic_summary,
+        'master_name': master_name,
+    }
+    numbers['doctest_percent'], numbers['doctest_covered'], numbers['doctest_total'] = doctest_match.groups()
+    numbers['sphinx_percent'], numbers['sphinx_covered'], numbers['sphinx_total'] = sphinx_match.groups()
+    numbers['master_doctest_percent'], numbers['master_doctest_covered'], numbers['master_doctest_total'] = master_doctest_match.groups()
+    numbers['master_sphinx_percent'], numbers['master_sphinx_covered'], numbers['master_sphinx_total'] = master_sphinx_match.groups()
+
+    # Get the percentages with exactly the number of digits needed to see a
+    # difference of one.
+    numbers['doctest_full_percent'] = "{1:.{0}f}".format(int(math.ceil(math.log(int(numbers['doctest_total']),
+        10) + 1)) - 2,
+        int(numbers['doctest_covered'])/int(numbers['doctest_total'])*100)
+    numbers['sphinx_full_percent'] = "{1:.{0}f}".format(int(math.ceil(math.log(int(numbers['sphinx_total']),
+        10) + 1)) - 2,
+        int(numbers['sphinx_covered'])/int(numbers['sphinx_total'])*100)
+    numbers['master_doctest_full_percent'] = "{1:.{0}f}".format(int(math.ceil(math.log(int(numbers['master_doctest_total']),
+        10) + 1)) - 2,
+        int(numbers['master_doctest_covered'])/int(numbers['master_doctest_total'])*100)
+    numbers['master_sphinx_full_percent'] = "{1:.{0}f}".format(int(math.ceil(math.log(int(numbers['master_sphinx_total']),
+        10) + 1)) - 2,
+        int(numbers['master_sphinx_covered'])/int(numbers['master_sphinx_total'])*100)
+
+    # XXX Change this when the pull request is merged
+    imgtemplate = '<img src="https://raw.github.com/sympy/sympy-bot/master/img/{imgname}.png" width="20" height="20" align="absmiddle" border="0">'
+    imgdict = {
+        -1: 'red_down',
+        0: 'blue_equals',
+        1: 'green_up',
+    }
+
+    numbers['doctest_img'] = imgdict[cmp(int(numbers['doctest_covered'])/int(numbers['doctest_total']),
+        int(numbers['master_doctest_covered'])/int(numbers['master_doctest_total']))]
+    numbers['sphinx_img'] = imgdict[cmp(int(numbers['sphinx_covered'])/int(numbers['sphinx_total']),
+        int(numbers['master_sphinx_covered'])/int(numbers['master_sphinx_total']))]
+
+    numbers['doctest_html_img'] = imgtemplate.format(imgname=numbers['doctest_img'])
+    numbers['sphinx_html_img'] = imgtemplate.format(imgname=numbers['sphinx_img'])
+
+    if imgdict[-1] in {numbers['doctest_img'], numbers['sphinx_img']}:
+        symbol = imgtemplate.format(imgname=imgdict[-1])
+        numbers['basic_summary'] = "decreased"
+    elif imgdict[1] in {numbers['doctest_img'], numbers['sphinx_img']}:
+        symbol = imgtemplate.format(imgname=imgdict[1])
+        numbers['basic_summary'] = "increased"
+    else:
+        symbol = imgtemplate.format(imgname=imgdict[0])
+        numbers['basic_summary'] = "unchanged"
+
+    return symbol, """[{basic_summary}]({report_url})
+{doctest_html_img} {doctest_full_percent}% of functions have doctests (compared to {master_doctest_full_percent}% in {master_name})
+{sphinx_html_img} {sphinx_full_percent}% of functions are imported into Sphinx (compared to {master_sphinx_full_percent}% in {master_name})
+""".format(**numbers)
+
+if __name__ == "__main__":
+    main()
+    sys.exit(0)

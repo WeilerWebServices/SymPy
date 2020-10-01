@@ -1,0 +1,207 @@
+{% from "macros" import video %}
+{% extends "base.html" %}
+
+{% block title %}SymPy{% endblock %}
+
+{% block main %}
+
+<section id="banner">
+  <h2 class="title">{% trans %}About{% endtrans %}</h2>
+  <div class="inner">
+    <p class="first">
+      {% trans %}SymPy is a Python library for symbolic mathematics. It aims to
+      become a full-featured computer algebra system (CAS) while keeping the code as
+      simple as possible in order to be comprehensible and easily extensible. SymPy
+      is written entirely in Python.{%
+      endtrans %}
+    </p>
+
+    <section id="get-started">
+    <p>{% trans %}<a href="https://docs.sympy.org/latest/tutorial/index.html">Get started with the tutorial</a>{% endtrans %} {% trans %}<a href="https://github.com/sympy/sympy/releases">Download Now</a>{% endtrans %}</p>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block content %}
+
+<h2 class="title">{% trans %}Why SymPy{% endtrans %}</h2>
+<div class="inner">
+    <p>{% trans %}SymPy is&hellip;{% endtrans %}</p>
+    <ul>
+        <li><strong>{% trans %}Free:{% endtrans %}</strong> {% trans %} Licensed under BSD, SymPy is free both as in speech and as in beer. {% endtrans %}</li>
+        <li><strong>{% trans %}Python-based:{% endtrans %}</strong> {% trans %} SymPy is written entirely in Python and uses Python for its language. {% endtrans %}</li>
+        <li><strong>{% trans %}Lightweight:{% endtrans %}</strong> {% trans %}
+        SymPy only depends on <a href="http://mpmath.org/">mpmath</a>, a pure Python library for arbitrary
+        floating point arithmetic, making it easy to use. {% endtrans %}</li>
+        <li><strong>{% trans %}A library:{% endtrans %}</strong> {% trans %} Beyond use as an interactive tool, SymPy can be embedded in other applications and extended with custom functions. {% endtrans %}</li>
+    </ul>
+    <p>{% trans %}<a href="features.html">See SymPy's features</a>{% endtrans %}</p>
+</div>
+
+<h2 class="title">{% trans %}Projects using SymPy{% endtrans %}</h2>
+<div class="inner">
+
+<p>{% trans %}This is an (incomplete) list of projects that use SymPy. If you use SymPy in
+your project, please let us know on our <a href="https://groups.google.com/forum/#!forum/sympy">mailinglist</a>, so that we can add your
+project here as well.{% endtrans %}</p>
+<ul>
+    <li><strong><a href="https://cadabra.science">
+      {% trans %}Cadabra{% endtrans %}</a></strong>:
+      {% trans %} Tensor algebra and (quantum)
+      field theory system using SymPy for scalar algebra. {% endtrans %}
+    </li>
+    <li><strong><a href="https://github.com/bjodah/chempy">
+      {% trans %}ChemPy{% endtrans %}</a></strong>:
+      {% trans %} A package useful for chemistry written in Python. {% endtrans%}
+    </li>
+    <li><strong><a href="https://einsteinpy.org">
+      {% trans %}EinsteinPy{% endtrans %}</a></strong>:
+      {% trans %} A Python package for symbolic and numerical
+      General Relativity. {% endtrans%}
+    </li>
+    <li><strong><a href="https://github.com/brombo/galgebra">
+      {% trans %}galgebra{% endtrans %}</a></strong>:
+      {% trans %} Geometric algebra (previously sympy.galgebra). {% endtrans%}
+    </li>
+    <li><strong><a href="https://mech.fsv.cvut.cz/~stransky/software/latexexpr/doc/">
+      {% trans %}LaTeX Expression project{% endtrans %}</a></strong>:
+      {% trans %} Easy LaTeX typesetting of algebraic expressions in symbolic
+      form with automatic substitution and result computation). {% endtrans%}
+    </li>
+    <li><strong><a href="https://lcapy.elec.canterbury.ac.nz/">
+      {% trans %}Lcapy{% endtrans %}</a></strong>:
+      {% trans %} Experimental Python package for teaching linear circuit
+      analysis. {% endtrans%}
+    </li>
+    <li><strong><a href="https://github.com/cbm755/octsympy">
+      {% trans %}OctSymPy{% endtrans %}</a></strong>:
+      {% trans %} A Symbolic Package for Octave using SymPy. {% endtrans %}
+    </li>
+    <li><strong><a href="https://github.com/biosustain/optlang">
+      {% trans %}Optlang{% endtrans %}</a></strong>:
+      {% trans %}  A Python package for solving mathematical optimization
+      problems. {% endtrans %}
+    </li>
+    <li><strong><a href="https://www.pydy.org/">
+      {% trans %}PyDy{% endtrans %}</a></strong>:
+      {% trans %} Multibody dynamics in Python. {% endtrans%}
+    </li>
+    <li><strong><a href="https://github.com/bjodah/pyneqsys">
+      {% trans %}pyneqsys{% endtrans %}</a></strong>:
+      {% trans %} Solve symbolically defined systems of non-linear equations
+      numerically. {% endtrans%}
+    </li>
+    <li><strong><a href="https://github.com/bjodah/pyodesys">
+      {% trans %}pyodesys{% endtrans %}</a></strong>:
+      {% trans %} Straightforward numerical integration of ODE systems from
+      Python. {% endtrans%}
+    </li>
+    <li><strong><a href="http://qmcpack.org/">
+      {% trans %}QMCPACK{% endtrans %}</a></strong>:
+      {% trans %} Quantum Monte Carlo in C++. Sympy is used to generate reference values for unit tests and some code generation.{% endtrans%}
+    </li>
+    <li><strong><a href="https://digitalcommons.calpoly.edu/cgi/viewcontent.cgi?article=1072&context=physsp/">
+      {% trans %}Quantum Programming in Python{% endtrans %}</a></strong>:
+      {% trans %} Quantum 1D Simple Harmonic Oscillator and Quantum Mapping
+      Gate. {% endtrans%}
+    </li>
+    <li><strong><a href="https://www.sagemath.org/">
+      {% trans %}SageMath{% endtrans %}</a></strong>:
+      {% trans %} Open source mathematics system that
+      includes SymPy. {% endtrans %}
+    </li>
+    <li><strong><a href="https://gitlab.com/celliern/scikit-fdiff//">
+      {% trans %}Scikit-fdiff{% endtrans %}</a></strong>:
+      {% trans %} Finite differences discretization. {% endtrans %}
+    </li>
+    <li><strong><a href="https://sfepy.org/">
+      {% trans %}SfePy{% endtrans %}</a></strong>:
+      {% trans %} Simple finite elements in Python. {% endtrans%}
+    </li>
+    <li><strong><a href="https://www.spyder-ide.org/">
+      {% trans %}Spyder{% endtrans %}</a></strong>:
+      {% trans %} The Scientific Python Development Environment, a Python
+      equivalent to Rstudio or MATLAB; full SymPy support can be enabled in
+      Spyder's <a href="https://docs.spyder-ide.org/ipythonconsole.html">
+        IPython Consoles</a>.{% endtrans%}
+    </li>
+    <li><strong><a href="https://www.researchgate.net/publication/260585491_Symbolic_Statistics_with_SymPy/">
+      {% trans %}Symbolic statistical modeling{% endtrans %}</a></strong>:
+      {% trans %} Adding statistical operations to complex physical models.
+      {% endtrans%}
+    </li>
+    <li><strong><a href="https://yt-project.org/">
+      {% trans %}yt{% endtrans%}</a></strong>:
+      {% trans %} Python package for analyzing and visualizing
+      volumetric data (<a href="https://unyt.readthedocs.io">unyt</a>, the yt
+      unit system, uses SymPy). {% endtrans%}
+    </li>
+</ul>
+
+</div>
+
+{% endblock %}
+
+
+{% block sidebar %}
+<div class="sidebar_card">
+    <h3>{% trans %}News{% endtrans %}</h3>
+    <p>
+        <span class="date">{{ datetime(2019, 12, 21) }}</span> {% trans v='1.5.1' %}Version {{ v }} released{% endtrans %} (<a href="https://github.com/sympy/sympy/wiki/Release-Notes-for-1.5.1">{% trans %}changes{% endtrans %}</a>)<br/>
+    </p><p>
+        <span class="date">{{ datetime(2019, 12, 9) }}</span> {% trans v='1.5' %}Version {{ v }} released{% endtrans %} (<a href="https://github.com/sympy/sympy/wiki/Release-Notes-for-1.5">{% trans %}changes{% endtrans %}</a>)<br/>
+    </p><p>
+        <span class="date">{{ datetime(2019, 4, 10) }}</span> {% trans v='1.4' %}Version {{ v }} released{% endtrans %} (<a href="https://github.com/sympy/sympy/wiki/Release-Notes-for-1.4">{% trans %}changes{% endtrans %}</a>)<br/>
+    </p><p>
+        <span class="date">{{ datetime(2018, 9, 14) }}</span> {% trans v='1.3' %}Version {{ v }} released{% endtrans %} (<a href="https://github.com/sympy/sympy/wiki/Release-Notes-for-1.3">{% trans %}changes{% endtrans %}</a>)<br/>
+    </p><p>
+        <span class="date">{{ datetime(2018, 7, 9) }}</span> {% trans v='1.2' %}Version {{ v }} released{% endtrans %} (<a href="https://github.com/sympy/sympy/wiki/Release-Notes-for-1.2">{% trans %}changes{% endtrans %}</a>)<br/>
+    </p><p>
+        <span class="date">{{ datetime(2017, 7, 6) }}</span> {% trans v='1.1' %}Version {{ v }} released{% endtrans %} (<a href="https://github.com/sympy/sympy/wiki/Release-Notes-for-1.1">{% trans %}changes{% endtrans %}</a>)<br/>
+    </p><p>
+        <span class="date">{{ datetime(2016, 3, 8) }}</span> {% trans v='1.0' %}Version {{ v }} released{% endtrans %} (<a href="https://github.com/sympy/sympy/wiki/Release-Notes-for-1.0">{% trans %}changes{% endtrans %}</a>)<br/>
+    </p><p>
+        <span class="date">{{ datetime(2015, 9, 3) }}</span> {% trans v='0.7.6.1' %}Version {{ v }} released{% endtrans %} (<a href="https://github.com/sympy/sympy/wiki/Release-Notes-for-0.7.6.1">{% trans %}changes{% endtrans %}</a>)<br/>
+    </p><p>
+        <span class="date">{{ datetime(2014, 11, 20) }}</span> {% trans v='0.7.6' %}Version {{ v }} released{% endtrans %} (<a href="https://github.com/sympy/sympy/wiki/Release-Notes-for-0.7.6">{% trans %}changes{% endtrans %}</a>)<br/>
+    </p><p>
+        <span class="date">{{ datetime(2014, 2, 14) }}</span> {% trans %} SymPy is accepted as a <a href="https://www.google-melange.com/archive/gsoc/2014/orgs/sympy">mentoring organization</a> for Google Summer of Code 2014 {% endtrans %} <br/>
+    </p><p>
+        <span class="date">{{ datetime(2014, 2, 22) }}</span> {% trans v='0.7.5' %}Version {{ v }} released{% endtrans %} (<a href="https://github.com/sympy/sympy/wiki/Release-Notes-for-0.7.5">{% trans %}changes{% endtrans %}</a>)<br/>
+    </p><p>
+        <span class="date">{{ datetime(2013, 12, 15) }}</span> {% trans v='0.7.4.1' %}Version {{ v }} released{% endtrans %} (<a href="https://github.com/sympy/sympy/wiki/Release-Notes-for-0.7.4.1">{% trans %}changes{% endtrans %}</a>)<br/>
+    </p><p>
+        <span class="date">{{ datetime(2013, 12, 9) }}</span> {% trans v='0.7.4' %}Version {{ v }} released{% endtrans %} (<a href="https://github.com/sympy/sympy/wiki/Release-Notes-for-0.7.4">{% trans %}changes{% endtrans %}</a>)<br/>
+    </p><p>
+        <span class="date">{{ datetime(2013, 7, 13) }}</span> {% trans v='0.7.3' %}Version {{ v }} released{% endtrans %} (<a href="https://github.com/sympy/sympy/wiki/Release-Notes-for-0.7.3">{% trans %}changes{% endtrans %}</a>)<br/>
+    </p><p>
+        <span class="date">{{ datetime(2013, 4, 8) }}</span> {% trans %} SymPy is accepted as a <a href="https://www.google-melange.com/archive/gsoc/2013/orgs/sympy">mentoring organization</a> for Google Summer of Code 2013 {% endtrans %} <br/>
+    </p><p>
+        <span class="date">{{ datetime(2012, 10, 16) }}</span> {% trans v='0.7.2' %}Version {{ v }} released{% endtrans %} (<a href="https://github.com/sympy/sympy/wiki/Release-Notes-for-0.7.2">{% trans %}changes{% endtrans %}</a>)<br/>
+    </p><p>
+        <span class="date">{{ datetime(2012, 3, 17) }}</span> {% trans %} SymPy is accepted as a <a href="https://www.google-melange.com/archive/gsoc/2012/orgs/sympy">mentoring organization</a> for Google Summer of Code 2012 {% endtrans %} <br/>
+    </p><p>
+        <span class="date">{{ datetime(2011, 7, 29) }}</span> {% trans v='0.7.1' %}Version {{ v }} released{% endtrans %} (<a href="https://github.com/sympy/sympy/wiki/Release-Notes-for-0.7.1">{% trans %}changes{% endtrans %}</a>)<br/>
+    </p><p>
+        <span class="date">{{ datetime(2011, 6, 28) }}</span> {% trans v='0.7.0' %}Version {{ v }} released{% endtrans %} (<a href="https://github.com/sympy/sympy/wiki/Release-Notes-for-0.7.0">{% trans %}changes{% endtrans %}</a>)<br/>
+    </p><p>
+        <span class="date">{{ datetime(2011, 3, 18) }}</span> {% trans %}SymPy is accepted as a <a href="https://www.google-melange.com/archive/gsoc/2011/orgs/sympy">mentoring organization</a> for Google Summer of Code 2011{% endtrans %}<br/>
+    </p><p>
+        <span class="date">{{ datetime(2010, 10, 23) }}</span> {% trans %}New website launched at sympy.org{% endtrans %}<br/>
+    </p><p>
+        <span class="date">{{ datetime(2010, 10, 18) }}</span> {% trans url='https://github.com/sympy/sympy/wiki/GSoC-2010-report' %}Final page about the <a href="{{ url }}">2010 Google Summer of Code in SymPy</a> is available.{% endtrans %}<br/>
+    </p><p>
+        <span class="date">{{ datetime(2010, 3, 17) }}</span> {% trans v='0.6.7' %}Version {{ v }} released{% endtrans %} (<a href="https://code.google.com/p/sympy/wiki/Changes">{% trans %}changes{% endtrans %}</a>)<br/>
+    </p><p>
+        <span class="date">{{ datetime(2009, 12, 20) }}</span> {% trans v='0.6.6' %}Version {{ v }} released{% endtrans %} (<a href="https://code.google.com/p/sympy/wiki/Changes">{% trans %}changes{% endtrans %}</a>)<br/>
+    </p><p>
+        <span class="date">{{ datetime(2009, 9, 26) }}</span> {% trans url='https://github.com/sympy/sympy/wiki/GSoC-2009-report' %}Final page about the <a href="{{ url }}">2009 Google Summer of Code in SymPy</a> is available.{% endtrans %}
+    </p>
+</div>
+{% endblock %}
+
+<!--  LocalWords:  endtrans Noncommutative gcd Gröbner primality LaTeX FORTAN
+  -->
+<!--  LocalWords:  endblock sympy
+  -->

@@ -1,0 +1,79 @@
+
+SymPy supports construction and manipulation of boolean expressions
+through the \texttt{sympy.logic} submodule. SymPy symbols can be used as
+propositional variables and subsequently be replaced with \texttt{True}
+or \texttt{False} values. Many functions for manipulating boolean
+expressions have been implemented in the \texttt{sympy.logic} submodule.
+
+\subsection{Constructing Boolean Expressions}
+
+A boolean variable can be declared as a SymPy \verb|Symbol|. The Python operators
+\texttt{\&}, \texttt{\textbar{}} and \texttt{\textasciitilde{}} are overridden
+when using SymPy objects to use the SymPy functionality for logical
+\texttt{And}, \texttt{Or}, and \texttt{Not}. Other logic functions are also
+integrated into SymPy, including \texttt{Xor} and \texttt{Implies}, which are
+constructed with \verb|^| and \texttt{\textgreater{}\textgreater{}},
+respectively. Expressions can therefore be constructed either by using
+the shortcut operator notation or by directly creating the relevant
+objects: \verb|And()|,
+\verb|Or()|, \verb|Not()|, \verb|Xor()|, \verb|Implies()|, \verb|Nand()|,
+\verb|Nor()|, etc.:
+
+\begin{verbatim}
+>>> e = (x & y) | z
+>>> e.subs({x: True, y: True, z: False})
+True
+\end{verbatim}
+
+\subsection{CNF and DNF}
+
+Any boolean expression can be converted to conjunctive normal form, disjunctive
+normal form, or negation normal form. The API also exposes methods to check if
+a boolean expression is in any of the aforementioned forms.
+
+\begin{verbatim}
+>>> from sympy.logic.boolalg import is_dnf, is_cnf
+>>> to_cnf((x & y) | z)
+And(Or(x, z), Or(y, z))
+>>> to_dnf(x & (y | z))
+Or(And(x, y), And(x, z))
+>>> is_cnf((x | y) & z)
+True
+>>> is_dnf((x & y) | z)
+True
+\end{verbatim}
+
+\subsection{Simplification and Equivalence}
+
+The \texttt{sympy.logic} submodule supports simplification of given boolean expression by making
+deductions from the expression. Equivalence of two logical expressions can also
+be checked. In the case of equivalence, the function \texttt{bool\_map}
+can be used to show which variables of the first expression correspond
+to which variables of the second one.
+
+\begin{verbatim}
+>>> a, b, c = symbols('a b c')
+>>> e = a & (~a | ~b) & (a | c)
+>>> simplify(e)
+And(Not(b), a)
+>>> e1 = a & (b | c)
+>>> e2 = (x & y) | (x & z)
+>>> bool_map(e1, e2)
+(And(Or(b, c), a), {a: x, b: y, c: z})
+\end{verbatim}
+
+\subsection{SAT Solving}
+
+The submodule also supports satisfiability (SAT) checking of a given boolean
+expression. If an expression is satisfiable, it is possible to return
+a variable assignment which satisfies it. The API also supports
+listing all possible assignments.
+The SAT solver has a clause learning DPLL algorithm implemented with a watch
+literal scheme and VSIDS heuristic~\cite{moskewicz2008method}.
+
+\begin{verbatim}
+>>> satisfiable(a & (~a | b) & (~b | c) & ~c)
+False
+>>> satisfiable(a & (~a | b) & (~b | c) & c)
+{a: True, b: True, c: True}
+\end{verbatim}

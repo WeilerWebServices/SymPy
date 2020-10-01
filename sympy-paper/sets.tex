@@ -1,0 +1,81 @@
+%% Sets
+
+SymPy supports representation of a wide variety of mathematical sets. This is
+achieved by first defining abstract representations of atomic set classes and
+then combining and transforming them using various set operations.
+
+Each of the set classes inherits from the base class \texttt{Set} and defines
+methods to check membership and calculate unions, intersections, and set
+differences. When these methods are not able to evaluate to atomic set
+classes, they are represented as abstract unevaluated objects.
+
+SymPy has the following atomic set classes:
+
+\begin{itemize}
+
+    \item \verb|EmptySet| represents the empty set $\emptyset$.
+
+    \item \verb|UniversalSet| is an abstract ``universal set'' of which
+      everything is a member. The union of the universal set with any set
+      gives the universal set and the intersection gives the other set itself.
+
+    \item \verb|FiniteSet| is functionally equivalent to Python's built
+      in \texttt{set} object. Its members can be any SymPy object including
+      other sets.
+
+    \item \verb|Integers| represents the set of integers $\mathbb{Z}$.
+
+    \item \verb|Naturals| represents the set of natural numbers $\mathbb{N}$,
+      i.e., the set of positive integers.
+
+    \item \verb|Naturals0| represents the set of whole numbers $\mathbb{N}_0$,
+      which are all the non-negative integers.
+
+    \item \verb|Range| represents a range of integers. A range is defined by
+      specifying a start value, an end value, and a step size. The enumeration
+      of a \texttt{Range} object is functionally equivalent to Python's
+      \texttt{range} except it supports infinite endpoints, allowing the
+      representation of infinite ranges.
+
+    \item \verb|Interval| represents an interval of real numbers. It is
+      defined by giving the start and the end points and by specifying if the interval is open
+      or closed on the respective ends.
+
+
+\end{itemize}
+
+
+%% Operations
+
+In addition to unevaluated classes for the basic \texttt{Union},
+\texttt{Intersection}, and \texttt{Complement} set operations, SymPy has the
+following set classes.
+
+\begin{itemize}
+
+    \item \verb|ProductSet| defines the Cartesian product of two
+        or more sets. The product set is useful when representing higher
+        dimensional spaces. For example, to represent a three-dimensional space,
+        SymPy uses the Cartesian product of three real sets.
+
+      \item \verb|ImageSet| represents the image of a function when applied to
+        a particular set. The image set of a function $F$ with respect to a set
+        $S$ is $\{ F(x) \mid x \in S \}$. SymPy uses image sets to represent sets
+        of infinite solutions of equations such as $\sin(x)=0$.
+
+
+      \item \verb|ConditionSet| represents a subset of a set whose members
+        satisfy a particular condition. The subset of set $S$
+        given by the condition $H$ is $\{x \mid H(x), x \in S \}$. SymPy uses
+        condition sets to represent the set of solutions of equations and
+        inequalities, where the equation or the inequality is the condition and
+        the set is the domain over which it is being solved.
+
+\end{itemize}
+
+A few other classes are implemented as special cases of the classes described
+above. The set of real numbers, \verb|Reals|, is implemented as a special case
+of \verb|Interval|. \verb|ComplexRegion|
+is implemented as a special case of \verb|ImageSet|. \verb|ComplexRegion|
+supports both the polar and rectangular representation of regions in the complex
+plane.

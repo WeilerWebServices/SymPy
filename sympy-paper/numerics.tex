@@ -1,0 +1,154 @@
+While SymPy primarily focuses on symbolics, it is impossible to have a
+complete symbolic system without the ability to numerically evaluate
+expressions. Many operations directly use numerical evaluation, such as
+plotting a function, or solving an equation numerically. Beyond this, certain
+purely symbolic operations require numerical evaluation to effectively
+compute. For instance, determining the truth value of $e + 1 > \pi$ is most
+conveniently done by numerically evaluating both sides of the inequality and
+checking which is larger.
+
+\subsection{Floating-Point Numbers}
+\label{sec:floating-point}
+Floating-point numbers in SymPy are implemented by the \texttt{Float} class,
+which represents an arbitrary-precision binary floating-point number by
+storing its value and precision (in bits). This representation is distinct
+from the Python built-in \texttt{float} type, which is a wrapper around
+machine \texttt{double} types and uses a fixed precision (53-bit).
+
+Because Python \texttt{float} literals are limited in precision, strings
+should be used to input precise decimal values:
+\begin{verbatim}
+>>> Float(1.1)
+1.10000000000000
+>>> Float(1.1, 30)   # precision equivalent to 30 digits
+1.10000000000000008881784197001
+>>> Float("1.1", 30)
+1.10000000000000000000000000000
+\end{verbatim}
+The \texttt{evalf} method converts a constant symbolic expression to a
+\texttt{Float} with the specified precision, here 25 digits:
+\begin{verbatim}
+>>> (pi + 1).evalf(25)
+4.141592653589793238462643
+\end{verbatim}
+\texttt{Float} numbers do not track their accuracy,
+and should be used with caution within symbolic expressions
+since familiar dangers of floating-point arithmetic apply~\cite{goldberg1991every}.
+A notorious case is that of catastrophic cancellation:
+\begin{verbatim}
+>>> cos(exp(-100)).evalf(25) - 1
+0
+\end{verbatim}
+Applying the \texttt{evalf} method to the whole expression solves
+this problem. Internally, \texttt{evalf} estimates the number of accurate
+bits of the floating-point
+approximation for each sub-expression, and adaptively increases the
+working precision until the estimated accuracy of the
+final result matches the sought number of decimal digits:
+\begin{verbatim}
+>>> (cos(exp(-100)) - 1).evalf(25)
+-6.919482633683687653243407e-88
+\end{verbatim}
+The \texttt{evalf} method works with complex numbers and supports
+more complicated expressions, such as
+special functions, infinite series, and integrals.
+The internal error tracking does not provide rigorous error bounds
+(in the sense of interval arithmetic) and cannot be used to accurately track
+uncertainty in measurement data;
+the sole purpose is to mitigate loss of accuracy that typically occurs
+when converting symbolic expressions to numerical values.
+
+\subsection{The mpmath Library}
+\label{sec:mpmath}
+
+The implementation of arbitrary-precision floating-point arithmetic is
+supplied by the mpmath library~\cite{mpmath}. Originally, it was developed as a SymPy
+submodule but has subsequently been moved to a standalone pure-Python package.
+The basic datatypes in mpmath are \texttt{mpf} and \texttt{mpc}, which
+respectively act as multiprecision substitutes for Python's \texttt{float} and
+\texttt{complex}. The floating-point precision is controlled by a global
+context:
+
+% doctest printer doesn't display "mpf"
+% no-doctest
+\begin{verbatim}
+>>> import mpmath
+>>> mpmath.mp.dps = 30    # 30 digits of precision
+>>> mpmath.mpf("0.1") + mpmath.exp(-50)
+mpf('0.100000000000000000000192874984794')
+>>> print(_)   # pretty-printed
+0.100000000000000000000192874985
+\end{verbatim}
+
+Like SymPy, mpmath is a pure Python library.  A design decision of SymPy is to
+keep it and its required dependencies pure Python. This is a primary advantage
+ of mpmath over other multiple precision libraries such as GNU MPFR~\cite{Fousse:2007:MMB:1236463.1236468},
+which is faster.  Like SymPy, mpmath is also BSD
+licensed (GNU MPFR is licensed under the GNU Lesser General Public License~\cite{rosen2005open}).
+
+Internally, mpmath represents
+a floating-point number ${(-1)}^s x \cdot 2^y$ by a tuple $(s, x, y, b)$ where
+$x$ and $y$ are arbitrary-size Python integers
+and the redundant integer $b$ stores the bit length of $x$ for quick access.
+If GMPY~\cite{GMPY} is installed, mpmath automatically uses
+the \texttt{gmpy.mpz} type for~$x$, and GMPY methods
+for rounding-related operations, improving performance.
+
+Most mpmath and SymPy functions use the same naming scheme, although this is
+not true in every case. For example, the symbolic SymPy summation expression
+\texttt{Sum(f(x), (x, a, b))} representing $\sum_{x=a}^b f(x)$ is represented
+in mpmath as \texttt{nsum(f, (a, b))}, where \texttt{f} is a numeric Python
+function.
+
+The mpmath library supports
+special functions, root-finding, linear algebra, polynomial approximation,
+and numerical computation of limits, derivatives, integrals, infinite
+series, and solving ODEs. All features work in arbitrary precision
+and use algorithms that allow computing hundreds of digits rapidly
+(except in degenerate cases).
+
+The double exponential (tanh-sinh) quadrature is used for numerical
+integration by default. For smooth integrands, this algorithm usually
+converges extremely rapidly, even when the integration interval is infinite
+or singularities are present at the endpoints~\cite{takahasi1974double,bailey2005comparison}.
+However, for good performance, singularities
+in the middle of the interval must be specified
+by the user.
+To evaluate slowly converging limits and infinite series, mpmath
+automatically tries Richardson extrapolation and the
+Shanks transformation
+(Euler-Maclaurin summation can also be used)~\cite{BenderOrszag1999}.
+A function to evaluate oscillatory integrals by means of convergence
+acceleration is also available.
+
+A wide array of higher mathematical functions is implemented
+with full support for complex values of all parameters and arguments,
+including complete and incomplete gamma functions,
+Bessel functions, orthogonal polynomials, elliptic functions and integrals,
+zeta and polylogarithm functions,
+the generalized hypergeometric function, and the Meijer G-function.
+The Meijer G-function instance
+$G_{1, 3}^{3, 0}\left(0 ; \tfrac{1}{2}, -1, - \tfrac{3}{2} \middle | x \right)$
+is a good test case~\cite{Toth2007}; past versions of both Maple and
+Mathematica produced incorrect numerical values for large $x > 0$.
+Here, mpmath automatically removes an internal singularity
+and compensates for cancellations (amounting to 656 bits
+of precision when $x = 10000$), giving correct values:
+% doctest printer doesn't display "mpf"
+% no-doctest
+\begin{verbatim}
+>>> mpmath.mp.dps = 15
+>>> mpmath.meijerg([[],[0]], [[-0.5,-1,-1.5],[]], 10000)
+mpf('2.4392576907199564e-94')
+\end{verbatim}
+
+Equivalently, with SymPy's interface this function can be evaluated as:
+\begin{verbatim}
+>>> meijerg([[],[0]], [[-S(1)/2,-1,-S(3)/2],[]], 10000).evalf()
+2.43925769071996e-94
+\end{verbatim}
+
+Symbolic integration and summation often produce hypergeometric
+and Meijer G-function closed forms (see section~\ref{sec:calculus});
+numerical evaluation of such special functions is a useful complement
+to direct numerical integration and summation.

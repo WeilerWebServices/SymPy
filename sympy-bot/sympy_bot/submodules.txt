@@ -1,0 +1,67 @@
+# This is a list of SymPy submodules, which are valid headers for the release
+# notes. New top-level modules or major submodules should be added here. Keep
+# the entries in alphabetical order, as the order here is the order used in
+# the release notes. Each line should have one valid header. Blank lines and
+# lines that that start with a # are ignored.
+
+abc
+algebras
+assumptions
+benchmarks
+calculus
+categories
+codegen
+combinatorics
+concrete
+core
+crypto
+diffgeom
+discrete
+external
+functions
+geometry
+holonomic
+integrals
+interactive
+liealgebras
+logic
+matrices
+ntheory
+parsing
+# physics is disparate enough to list each submodule separately
+
+physics.continuum_mechanics
+physics.control
+physics.gaussopt
+physics.hep
+physics.hydrogen
+physics.matrices
+physics.mechanics
+physics.optics
+physics.paulialgebra
+physics.pring
+physics.qho_1d
+physics.quantum
+physics.secondquant
+physics.sho
+physics.units
+physics.vector
+physics.wigner
+
+plotting
+polys
+printing
+sandbox
+series
+sets
+simplify
+solvers
+stats
+strategies
+tensor
+unify
+utilities
+vector
+
+# other is a special header for any changes that don't fit into a submodule
+other

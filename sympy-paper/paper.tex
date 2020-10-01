@@ -1,0 +1,138 @@
+%% Submissions for peer-review must enable line-numbering
+%% using the lineno option in the \documentclass command.
+%%
+%% Preprints and camera-ready submissions do not need
+%% line numbers, and should have this option removed.
+%%
+%% Please note that the line numbering option requires
+%% version 1.1 or newer of the wlpeerj.cls file.
+
+\documentclass[fleqn,10pt,numbers]{wlpeerj} % for journal submissions
+% \documentclass[fleqn,10pt]{wlpeerj} % for preprint submissions
+
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[scaled=0.8]{DejaVuSansMono}
+
+\usepackage{graphicx}
+\usepackage[all]{xy}
+\usepackage{amsmath}
+\usepackage{caption}
+\graphicspath{ {images/} }
+
+% Makes quote characters in monospace font not be curly
+\usepackage{upquote}
+
+\usepackage{amsmath}
+\usepackage{url}
+
+% Order matters here
+\usepackage{xr-hyper}
+\usepackage{hyperref}
+\externaldocument[S-]{supplement}
+
+\hypersetup{
+  colorlinks=true,
+  urlcolor=blue,
+  citecolor=black,
+  filecolor=black % cross-file links, which do not actually work unless the
+                  % supplement is named supplement.pdf
+}
+
+% for nice units
+\usepackage{siunitx}
+
+% for images: png, pdf, etc
+\usepackage{graphicx}
+
+% for nice table formatting, i.e., /toprule, /midrule, etc
+\usepackage{booktabs}
+
+% to allow for \verb++ declarations in captions.
+\usepackage{cprotect}
+
+% to allow usage of \mathbb symbols
+\usepackage{amssymb}
+
+\usepackage{longtable}
+
+\usepackage{listings}
+
+\newcommand\email[1]{\href{mailto:#1}{#1}}
+\title{SymPy: symbolic computing in Python}
+
+\input{authors}
+
+% \keywords{Python, computer algebra system, symbolics}
+
+\begin{abstract}
+  SymPy is an open source computer algebra system written in pure Python. It
+  is built with a focus on extensibility and ease of use, through both
+  interactive and programmatic applications. These characteristics have led
+  SymPy to become a popular symbolic library for the scientific Python
+  ecosystem. This paper presents the architecture of SymPy, a description of
+  its features, and a discussion of select submodules. The
+  supplementary material provide additional examples and further outline
+  details of the architecture and features of SymPy.
+\end{abstract}
+
+\begin{document}
+
+\flushbottom
+\maketitle
+\thispagestyle{empty}
+
+\section{Introduction}
+
+%% What sympy is, where to download etc.
+%%
+%% List other major CAS's.
+%%
+%% Why SymPy.
+
+\input{introduction.tex}
+
+\section{Overview of Capabilities}
+\label{sec:features}
+
+%% List of Features and how to use
+%%
+%% Quick overview of the main modules, what it can do and so on. It should probably provide examples how to use sympy.
+%%
+%% See also the supplement (below)
+
+\input{features}
+
+\section{Numerics}
+\label{sec:numerics}
+
+%% Description of some algorithms (example: integration with Risch, Meijer G, Gruntz, polys)
+%%
+%% Description of numerics/mpmath (Fredrik)
+
+\input{numerics}
+
+\section{Physics Submodule}
+\label{sec:domain_specific}
+
+\input{domain_specific}
+
+\section{Architecture}
+\label{sec:architecture}
+
+\input{architecture}
+
+\section{Projects that Depend on SymPy}
+\label{sec:other-proj}
+\input{projects_that_depend_on_sympy}
+
+\section{Conclusion and Future Work}
+\label{sec:conclusion}
+
+\input{conclusion_and_future_work}
+
+\phantomsection
+\bibliography{paper}
+
+\end{document}

@@ -1,0 +1,50 @@
+language: python
+python:
+  - '2.7'
+
+services:
+  - docker
+
+# Do nothing
+before_install:
+  - ls
+install:
+  - ls
+
+before_script:
+  - docker-compose up -d
+script:
+  - sleep 2  # Wait for api to be up
+  - docker-compose exec app pytest tests/ -v
+
+before_deploy:
+  - docker cp app:/usr/src/app/lib lib
+  - openssl aes-256-cbc -K $encrypted_2fd045226a67_key -iv $encrypted_2fd045226a67_iv
+    -in client-secret.json.enc -out ../client-secret.json -d
+  - version=$(if [ ! -z "$TRAVIS_TAG" ]; then echo $(cut -d'-' -f2 <<<"$TRAVIS_TAG");
+    else echo "$TRAVIS_BRANCH"; fi)
+  - echo "Version = $version"
+
+deploy:
+  provider: gae
+  keyfile: "../client-secret.json"
+  project: sympy-live-hrd
+  skip_cleanup: true
+  no_promote: true
+  version: "$version"
+  on:
+    all_branches: true
+    repo: sympy/sympy-live
+
+after_deploy:
+  - pip install requests
+  - python bin/update_status_on_pr.py
+  - status_code=$(curl --write-out %{http_code} --silent --output /dev/null https://$version-dot-sympy-live-hrd.appspot.com/status)
+  - echo "App status code => $status_code"
+  - if [ "$status_code" != "200" ]; then travis_terminate; fi
+  - docker-compose down
+
+env:
+  global:
+    # Do not prompt for user input when using any SDK methods.
+    - CLOUDSDK_CORE_DISABLE_PROMPTS=1
